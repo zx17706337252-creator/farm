@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../configs/game_configs.dart';
 import '../providers/game_providers.dart';
 import '../widgets/common_widgets.dart';
+import '../models/game_models.dart';
 
 class OrchardScreen extends ConsumerStatefulWidget {
   const OrchardScreen({super.key});
@@ -243,7 +244,7 @@ class _OrchardScreenState extends ConsumerState<OrchardScreen>
                                             color: (ready
                                                     ? Colors.amber
                                                     : Colors.green)
-                                                .withValues(alpha: 0.2),
+                                                .withOpacity(0.2),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),

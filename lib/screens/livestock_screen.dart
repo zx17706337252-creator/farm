@@ -4,6 +4,7 @@ import '../configs/game_configs.dart';
 import '../providers/game_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import '../models/game_models.dart';
 
 class LivestockScreen extends ConsumerStatefulWidget {
   const LivestockScreen({super.key});

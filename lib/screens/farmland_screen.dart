@@ -87,7 +87,7 @@ class _FarmlandScreenState extends ConsumerState<FarmlandScreen>
                                   decoration: BoxDecoration(
                                     color: selected
                                         ? const Color(0xFF5DAF54)
-                                            .withValues(alpha: 0.15)
+                                            .withOpacity(0.15)
                                         : Colors.white,
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
@@ -100,7 +100,7 @@ class _FarmlandScreenState extends ConsumerState<FarmlandScreen>
                                         ? [
                                             BoxShadow(
                                               color: Colors.green
-                                                  .withValues(alpha: 0.3),
+                                                  .withOpacity(0.3),
                                               blurRadius: 10,
                                             )
                                           ]
@@ -388,7 +388,7 @@ class _LandTile extends StatelessWidget {
               boxShadow: isReady
                   ? [
                       BoxShadow(
-                        color: Colors.amber.withValues(alpha: 0.5),
+                        color: Colors.amber.withOpacity(0.5),
                         blurRadius: 8,
                         spreadRadius: 1,
                       )

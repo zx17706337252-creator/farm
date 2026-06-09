@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../configs/game_configs.dart';
 import '../providers/game_providers.dart';
 import '../widgets/common_widgets.dart';
+import '../models/game_models.dart';
 
 class ShopScreen extends ConsumerStatefulWidget {
   const ShopScreen({super.key});
@@ -63,7 +64,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
                                 ? [
                                     BoxShadow(
                                       color:
-                                          Colors.amber.withValues(alpha: 0.4),
+                                          Colors.amber.withOpacity(0.4),
                                       blurRadius: 8,
                                     )
                                   ]
@@ -280,9 +281,9 @@ class _ShopItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
+          color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Row(
           children: [

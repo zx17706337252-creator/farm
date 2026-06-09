@@ -9,7 +9,7 @@ name: Flutter Android APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # 支持在 GitHub 页面手动点击 Run
+  workflow_dispatch:
 
 jobs:
   build-android:
@@ -18,11 +18,9 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # ---------- 1. 拉代码 ----------
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---------- 2. 安装 Flutter SDK ----------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -33,7 +31,6 @@ jobs:
       - name: Flutter Doctor
         run: flutter doctor -v
 
-      # ---------- 3. 补全 Android 平台目录（如不存在） ----------
       - name: Ensure android/ directory exists
         shell: bash
         run: |
@@ -48,60 +45,50 @@ jobs:
             echo "==> android/ 目录已存在"
           fi
 
-      # ---------- 3.1 修复 Android Kotlin 版本（解决 "Your project requires a newer version of the Kotlin Gradle plugin" 错误） ----------
-      - name: Fix Kotlin version for Android build
+      - name: Fix Kotlin version in Gradle files
         shell: python
         run: |
           import re, os
-          # 定位所有 gradle 配置文件
-          files_to_check = ['android/build.gradle', 'android/settings.gradle']
-          target_kotlin = '1.9.22'
-          for f in files_to_check:
+          target = '1.9.22'
+          for f in ['android/build.gradle', 'android/settings.gradle']:
               if not os.path.exists(f):
-                  print(f"{f}: 不存在，跳过")
-                  continue
+                  print(f'{f}: 不存在，跳过'); continue
               with open(f, 'r', encoding='utf-8') as fp:
                   content = fp.read()
-              # 替换 kotlin_version = "x.y.z" / kotlin_version = 'x.y.z' / id "org.jetbrains.kotlin:kotlin-gradle-plugin:x.y.z"
-              new_content = re.sub(
-                  r'(kotlin_version\s*[:=]\s*)["\'][\d.]+["\']',
-                  lambda m: f'{m.group(1)}"{target_kotlin}"',
-                  content
-              )
-              new_content = re.sub(
-                  r'(org\.jetbrains\.kotlin:kotlin-gradle-plugin:)[\d.]+',
-                  lambda m: f'{m.group(1)}{target_kotlin}',
-                  new_content
-              )
-              if new_content != content:
+              new = content
+              # 匹配 kotlin_version = "x.y.z"
+              new = re.sub(r"(kotlin_version\s*=\s*)['\"][\d.]+['\"]",
+                           lambda m, t=target: f"{m.group(1)}\"{t}\"", new)
+              # 匹配 id "org.jetbrains.kotlin.android" version "x.y.z"
+              new = re.sub(r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+)["\'][\d.]+["\']',
+                           lambda m, t=target: f"{m.group(1)}\"{t}\"", new)
+              # 匹配 org.jetbrains.kotlin:kotlin-gradle-plugin:x.y.z
+              new = re.sub(r'(org\.jetbrains\.kotlin:kotlin-gradle-plugin:)[\d.]+',
+                           lambda m, t=target: f"{m.group(1)}{t}", new)
+              if new != content:
                   with open(f, 'w', encoding='utf-8') as fp:
-                      fp.write(new_content)
-                  print(f"{f}: 已更新 Kotlin 到 {target_kotlin}")
+                      fp.write(new)
+                  print(f'{f}: 已更新 Kotlin 到 {target}')
               else:
-                  print(f"{f}: 未发现需要更新")
-          # 打印关键信息供调试
-          for f in files_to_check:
+                  print(f'{f}: 无需更新')
+          # 验证
+          for f in ['android/build.gradle', 'android/settings.gradle']:
               if os.path.exists(f):
                   with open(f) as fp:
-                      text = fp.read()
-                  print(f"\n=== {f} (Kotlin 相关行) ===")
-                  for line in text.split('\n'):
-                      if 'kotlin' in line.lower() or 'gradle' in line.lower():
-                          print("  " + line.strip()[:120])
+                      print(f'\n=== {f} (kotlin 相关) ===')
+                      for line in fp:
+                          if 'kotlin' in line.lower():
+                              print('  ' + line.rstrip()[:150])
 
-      # ---------- 4. 获取依赖 ----------
       - name: Flutter pub get
         run: flutter pub get
 
-      # ---------- 5. 静态分析（仅作检查，失败不阻塞） ----------
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos || true
 
-      # ---------- 6. 构建 release APK ----------
       - name: Build release APK
         run: flutter build apk --release --no-tree-shake-icons
 
-      # ---------- 7. 上传 APK 到 Actions Artifacts ----------
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:

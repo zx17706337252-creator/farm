@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../configs/game_configs.dart';
 import '../providers/game_providers.dart';
 import '../widgets/common_widgets.dart';
+import '../models/game_models.dart';
 
 class FactoryScreen extends ConsumerStatefulWidget {
   const FactoryScreen({super.key});

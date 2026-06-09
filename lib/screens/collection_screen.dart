@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../configs/game_configs.dart';
 import '../providers/game_providers.dart';
 import '../widgets/common_widgets.dart';
+import '../models/game_models.dart';
 
 class CollectionScreen extends ConsumerStatefulWidget {
   const CollectionScreen({super.key});
@@ -274,10 +275,10 @@ class _CollectionEntry extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isCollected ? color.withValues(alpha: 0.12) : Colors.grey.shade100,
+        color: isCollected ? color.withOpacity(0.12) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: isCollected ? color.withValues(alpha: 0.5) : Colors.grey.shade300),
+            color: isCollected ? color.withOpacity(0.5) : Colors.grey.shade300),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

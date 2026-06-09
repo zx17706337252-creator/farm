@@ -4,6 +4,7 @@ import '../navigation/app_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import '../providers/game_providers.dart';
+import '../models/game_models.dart';
 
 class WorldMapScreen extends ConsumerStatefulWidget {
   const WorldMapScreen({super.key});
@@ -220,7 +221,7 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen>
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withValues(alpha: 0.3),
+                            color: Colors.green.withOpacity(0.3),
                             blurRadius: 8,
                           )
                         ],
@@ -300,11 +301,11 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Colors.white.withOpacity(0.85),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.green.withValues(alpha: 0.15),
+                      color: Colors.green.withOpacity(0.15),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -371,7 +372,7 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF81C784).withValues(alpha: 0.0),
+                        const Color(0xFF81C784).withOpacity(0.0),
                         const Color(0xFF66BB6A),
                       ],
                       begin: Alignment.topCenter,
@@ -400,7 +401,7 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen>
                           boxShadow: [
                             BoxShadow(
                               color: const Color(0xFFFFEB3B)
-                                  .withValues(alpha: 0.5 + 0.3 * _seasonAnim.value),
+                                  .withOpacity(0.5 + 0.3 * _seasonAnim.value),
                               blurRadius: 30,
                               spreadRadius: 8,
                             )
@@ -436,7 +437,7 @@ class _WorldMapScreenState extends ConsumerState<WorldMapScreen>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withValues(alpha: 0.3),
+                  color: Colors.green.withOpacity(0.3),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 )
@@ -566,7 +567,7 @@ class _AnimatedModuleSpotState extends State<_AnimatedModuleSpot>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: widget.module.color
-                        .withValues(alpha: 0.12 * _halo.value),
+                        .withOpacity(0.12 * _halo.value),
                   ),
                 ),
                 Container(
@@ -575,7 +576,7 @@ class _AnimatedModuleSpotState extends State<_AnimatedModuleSpot>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: widget.module.color
-                        .withValues(alpha: 0.22 * _halo.value),
+                        .withOpacity(0.22 * _halo.value),
                   ),
                 ),
                 // 主体
@@ -593,7 +594,7 @@ class _AnimatedModuleSpotState extends State<_AnimatedModuleSpot>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: widget.module.color.withValues(alpha: 0.45),
+                          color: widget.module.color.withOpacity(0.45),
                           blurRadius: 14,
                           offset: const Offset(0, 6),
                         ),
@@ -616,7 +617,7 @@ class _AnimatedModuleSpotState extends State<_AnimatedModuleSpot>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: Colors.black.withOpacity(0.08),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   )

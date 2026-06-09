@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../configs/game_configs.dart';
 import '../providers/game_providers.dart';
 import '../widgets/common_widgets.dart';
+import '../models/game_models.dart';
 
 class PetScreen extends ConsumerStatefulWidget {
   const PetScreen({super.key});
@@ -253,7 +254,7 @@ class _PetScreenState extends ConsumerState<PetScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
