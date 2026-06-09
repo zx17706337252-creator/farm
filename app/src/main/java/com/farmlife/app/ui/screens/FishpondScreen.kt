@@ -155,7 +155,7 @@ fun FishItem(
     fish: com.farmlife.app.data.entity.FishInstanceEntity,
     cfg: com.farmlife.app.config.FishConfig?,
     engine: FarmEngine,
-    fishId: Int
+    fishId: Long
 ) {
     val scope = rememberCoroutineScope()
     val now = System.currentTimeMillis()
