@@ -55,8 +55,8 @@ class GameEngine {
   }
 
   // ===== Land / Crop =====
-  Future<List<Land>> loadLands() => _repo.getAllLands();
-  Future<List<Crop>> loadCrops() => _repo.getAllCrops();
+  Future<List<Land>> loadLands() async => _repo.getAllLands();
+  Future<List<Crop>> loadCrops() async => _repo.getAllCrops();
 
   Future<bool> plantCrop(Land land, CropConfig config, Player player) async {
     if (player.gold < config.sellPrice * 2) return false;
@@ -117,7 +117,7 @@ class GameEngine {
   }
 
   // ===== Animal =====
-  Future<List<Animal>> loadAnimals() => _repo.getAllAnimals();
+  Future<List<Animal>> loadAnimals() async => _repo.getAllAnimals();
 
   Future<bool> buyAnimal(AnimalConfig config, Player player) async {
     if (player.gold < config.purchasePrice) return false;
@@ -181,7 +181,7 @@ class GameEngine {
   }
 
   // ===== Pet =====
-  Future<List<Pet>> loadPets() => _repo.getAllPets();
+  Future<List<Pet>> loadPets() async => _repo.getAllPets();
 
   Future<bool> buyPet(PetConfig config, Player player) async {
     if (player.gold < config.purchasePrice) return false;
@@ -202,8 +202,8 @@ class GameEngine {
   }
 
   // ===== Factory =====
-  Future<List<Factory>> loadFactories() => _repo.getAllFactories();
-  Future<List<ProductionQueue>> loadQueues() => _repo.getAllQueues();
+  Future<List<Factory>> loadFactories() async => _repo.getAllFactories();
+  Future<List<ProductionQueue>> loadQueues() async => _repo.getAllQueues();
 
   Future<bool> buyFactory(FactoryConfig config, Player player) async {
     if (player.gold < config.purchasePrice) return false;
@@ -291,7 +291,7 @@ class GameEngine {
   }
 
   // ===== Inventory =====
-  Future<List<InventoryItem>> loadInventory() => _repo.getAllInventory();
+  Future<List<InventoryItem>> loadInventory() async => _repo.getAllInventory();
 
   Future<int> sellInventoryItem(
       InventoryItem item, int quantity, Player player) async {
@@ -346,7 +346,7 @@ class GameEngine {
   }
 
   // ===== Tree =====
-  Future<List<Tree>> loadTrees() => _repo.getAllTrees();
+  Future<List<Tree>> loadTrees() async => _repo.getAllTrees();
 
   Future<bool> plantTree(
       int x, int y, TreeConfig config, Player player) async {
@@ -405,8 +405,8 @@ class GameEngine {
   }
 
   // ===== Fish =====
-  Future<List<Fish>> loadFish() => _repo.getAllFish();
-  Future<List<Pond>> loadPonds() => _repo.getAllPonds();
+  Future<List<Fish>> loadFish() async => _repo.getAllFish();
+  Future<List<Pond>> loadPonds() async => _repo.getAllPonds();
 
   Future<bool> addFish(
       Pond pond, FishConfig config, Player player) async {
@@ -456,7 +456,7 @@ class GameEngine {
   }
 
   // ===== Pet Facility =====
-  Future<List<PetFacility>> loadPetFacilities() =>
+  Future<List<PetFacility>> loadPetFacilities() async =>
       _repo.getAllPetFacilities();
 
   // ===== Collection =====
@@ -495,14 +495,14 @@ class GameEngine {
     _repo.updatePlayer(p.copyWith(collectionScore: score));
   }
 
-  Future<List<CollectionRecord>> loadCollections() =>
+  Future<List<CollectionRecord>> loadCollections() async =>
       _repo.getAllCollections();
 
   Season currentSeason(Player player) =>
       TimeSystem.currentSeason(player.playStartTime);
   Weather currentWeather() => TimeSystem.currentWeather();
 
-  Future<List<GameLog>> loadLogs() => _repo.getRecentLogs();
+  Future<List<GameLog>> loadLogs() async => _repo.getRecentLogs();
 }
 
 // ==================== 全局 Provider ====================

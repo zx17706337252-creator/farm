@@ -50,7 +50,7 @@ class FarmScaffold extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 child: IconButton.filled(
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.85),
+                    backgroundColor: Colors.white.withOpacity(0.85),
                     foregroundColor: AppTheme.primary,
                     elevation: 4,
                     shadowColor: Colors.black12,
@@ -108,18 +108,18 @@ class GlassCard extends StatelessWidget {
       margin: margin,
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color ?? Colors.white.withValues(alpha: 0.92),
+        color: color ?? Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(radius ?? 20),
         border: Border.all(color: Colors.white70, width: 1.5),
         boxShadow: shadow ??
             [
               BoxShadow(
-                color: Colors.greenAccent.withValues(alpha: 0.12),
+                color: Colors.greenAccent.withOpacity(0.12),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
+                color: Colors.black.withOpacity(0.06),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -162,14 +162,14 @@ class StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: bgColor ?? Colors.white.withValues(alpha: 0.9),
+        color: bgColor ?? Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: (color ?? AppTheme.gold).withValues(alpha: 0.4),
+          color: (color ?? AppTheme.gold).withOpacity(0.4),
         ),
         boxShadow: [
           BoxShadow(
-            color: (color ?? AppTheme.gold).withValues(alpha: 0.15),
+            color: (color ?? AppTheme.gold).withOpacity(0.15),
             blurRadius: 8,
             offset: const Offset(0, 2),
           )
@@ -228,7 +228,7 @@ class GradientButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: startColor.withValues(alpha: 0.4),
+              color: startColor.withOpacity(0.4),
               blurRadius: 12,
               offset: const Offset(0, 4),
             )
@@ -337,7 +337,7 @@ class _FloatingRewardState extends State<FloatingReward>
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: widget.color, width: 2),
                   boxShadow: [
-                    BoxShadow(color: widget.color.withValues(alpha: 0.4), blurRadius: 8)
+                    BoxShadow(color: widget.color.withOpacity(0.4), blurRadius: 8)
                   ],
                 ),
                 child: Text(
@@ -426,7 +426,7 @@ class _BreathingIconState extends State<BreathingIcon>
                   height: widget.size * 1.5,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: widget.color.withValues(alpha: 0.15 * _fade.value),
+                    color: widget.color.withOpacity(0.15 * _fade.value),
                   ),
                 ),
                 // 中层光圈
@@ -435,7 +435,7 @@ class _BreathingIconState extends State<BreathingIcon>
                   height: widget.size * 1.2,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: widget.color.withValues(alpha: 0.25 * _fade.value),
+                    color: widget.color.withOpacity(0.25 * _fade.value),
                   ),
                 ),
                 // 主体
@@ -453,7 +453,7 @@ class _BreathingIconState extends State<BreathingIcon>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: widget.color.withValues(alpha: 0.5),
+                          color: widget.color.withOpacity(0.5),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -478,7 +478,7 @@ class _BreathingIconState extends State<BreathingIcon>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 4,
                   )
                 ],
@@ -529,10 +529,10 @@ class FarmProgressBar extends StatelessWidget {
         widthFactor: p,
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
+            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
             borderRadius: BorderRadius.circular(height / 2),
             boxShadow: [
-              BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 4),
+              BoxShadow(color: color.withOpacity(0.4), blurRadius: 4),
             ],
           ),
         ),
@@ -558,10 +558,10 @@ class QualityBadge extends StatelessWidget {
         vertical: compact ? 2 : 5,
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
+        gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 4)
+          BoxShadow(color: color.withOpacity(0.3), blurRadius: 4)
         ],
       ),
       child: Text(
@@ -627,7 +627,7 @@ class ToastStack extends ConsumerWidget {
                           border: Border.all(color: t.color, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: t.color.withValues(alpha: 0.3),
+                              color: t.color.withOpacity(0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )
