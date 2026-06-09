@@ -141,7 +141,7 @@ fun PondCard(
                     items(fishInPond) { fish ->
                         val cfg = FishConfigs.getById(fish.configId)
                         FishItem(fish = fish, cfg = cfg, engine = engine) {
-                            scope.launch { engine.collectFish(fish.fishId) }
+                            rememberCoroutineScope().launch { engine.collectFish(fish.fishId) }
                         }
                     }
                 }
