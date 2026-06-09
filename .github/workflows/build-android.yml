@@ -1,0 +1,70 @@
+# ============================================================
+# 呆柳的农场 - Flutter Android APK 自动构建
+# GitHub Actions (免费) - 每次推送到 main 分支或手动触发
+# 构建完成后，APK 作为 artifact 上传到 Run 页面，可直接下载
+# ============================================================
+
+name: Flutter Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:   # 支持在 GitHub 页面手动点击 Run
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ---------- 1. 拉代码 ----------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ---------- 2. 安装 Flutter SDK ----------
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter Doctor
+        run: flutter doctor -v
+
+      # ---------- 3. 补全 Android 平台目录（如不存在） ----------
+      - name: Ensure android/ directory exists
+        shell: bash
+        run: |
+          if [ ! -d "android" ]; then
+            echo "==> android/ 目录不存在，用 flutter create 自动生成"
+            flutter create --platforms=android \
+                           --project-name=flutter_farmlife \
+                           --org=com.dailiu.farm \
+                           --no-pub \
+                           .
+          else
+            echo "==> android/ 目录已存在"
+          fi
+
+      # ---------- 4. 获取依赖 ----------
+      - name: Flutter pub get
+        run: flutter pub get
+
+      # ---------- 5. 静态分析（仅作检查，失败不阻塞） ----------
+      - name: Analyze Dart code
+        run: flutter analyze --no-fatal-infos || true
+
+      # ---------- 6. 构建 release APK ----------
+      - name: Build release APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      # ---------- 7. 上传 APK 到 Actions Artifacts ----------
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-farmlife-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
