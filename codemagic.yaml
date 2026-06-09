@@ -1,0 +1,126 @@
+# ============================================
+# 呆柳的农场 - Codemagic 自动化构建配置
+# Flutter 跨平台 (Android + iOS)
+# 参考：https://docs.codemagic.io/yaml/yaml-getting-started/
+#
+# 使用说明：
+# 1) 把本仓库连接到 codemagic.io（Sign up with GitHub）
+# 2) Codemagic 自动识别本配置
+# 3) 选择一个 workflow（推荐先跑 Android，再跑 iOS Simulator）
+# ============================================
+
+workflows:
+  # ------------------------------------------
+  # Android APK 构建（免费，Linux 机器，不需要签名）
+  # ------------------------------------------
+  flutter-android:
+    name: Flutter Android (APK)
+    instance_type: linux
+    max_build_duration: 30
+    environment:
+      flutter: stable
+    scripts:
+      - name: 补全 Android 平台目录（如不存在）
+        script: |
+          if [ ! -d "android" ]; then
+            echo "android/ 目录不存在，用 flutter create 补全"
+            flutter create --platforms=android --project-name=flutter_farmlife --org=com.dailiu.farm .
+          else
+            echo "android/ 目录已存在，跳过"
+          fi
+      - name: 获取 Flutter 依赖
+        script: flutter pub get
+      - name: 构建 release APK
+        script: flutter build apk --release --no-tree-shake-icons
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+    publishing:
+      email:
+        recipients:
+          - your_email@example.com        # 构建成功后通知你（请替换为你的邮箱）
+
+  # ------------------------------------------
+  # iOS Simulator App 构建（macOS 机器，免费额度可用）
+  # 产出 .app，可用 Sideloadly 签名装真机
+  # ------------------------------------------
+  flutter-ios-simulator:
+    name: Flutter iOS (Simulator App)
+    instance_type: mac_mini_m1
+    max_build_duration: 45
+    environment:
+      flutter: stable
+      xcode: 15.4
+      cocoapods: default
+    scripts:
+      - name: 补全 iOS 平台目录（如不存在）
+        script: |
+          if [ ! -d "ios" ]; then
+            echo "ios/ 目录不存在，用 flutter create 补全"
+            flutter create --platforms=ios --project-name=flutter_farmlife --org=com.dailiu.farm .
+          else
+            echo "ios/ 目录已存在，跳过"
+          fi
+      - name: 获取 Flutter 依赖
+        script: flutter pub get
+      - name: 安装 CocoaPods
+        script: |
+          cd ios
+          if [ -f "Podfile" ]; then
+            rm -rf Pods Podfile.lock
+            pod install --repo-update
+          fi
+          cd ..
+      - name: 构建 iOS Simulator .app
+        script: |
+          flutter build ios --debug --simulator --no-codesign
+    artifacts:
+      - build/ios/Debug-iphonesimulator/*.app
+    publishing:
+      email:
+        recipients:
+          - your_email@example.com
+
+  # ------------------------------------------
+  # iOS 真机 IPA 构建（需要 Apple 开发者账号 $99/年）
+  # 购买开发者账号后，在 Codemagic 集成 App Store Connect，
+  # 即可使用此 workflow 生成可上架的 IPA
+  # ------------------------------------------
+  flutter-ios-release:
+    name: Flutter iOS (IPA - 需要开发者账号)
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: 15.4
+      cocoapods: default
+    scripts:
+      - name: 补全 iOS 平台目录（如不存在）
+        script: |
+          if [ ! -d "ios" ]; then
+            flutter create --platforms=ios --project-name=flutter_farmlife --org=com.dailiu.farm .
+          fi
+      - name: 获取 Flutter 依赖
+        script: flutter pub get
+      - name: 安装 CocoaPods
+        script: |
+          cd ios
+          rm -rf Pods Podfile.lock
+          pod install --repo-update
+          cd ..
+      - name: 配置签名（需在 Codemagic 控制台导入证书）
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "com.dailiu.farm" --type IOS_APP_STORE
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: 构建签名 IPA
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      email:
+        recipients:
+          - your_email@example.com
