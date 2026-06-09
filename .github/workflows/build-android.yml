@@ -48,6 +48,47 @@ jobs:
             echo "==> android/ 目录已存在"
           fi
 
+      # ---------- 3.1 修复 Android Kotlin 版本（解决 "Your project requires a newer version of the Kotlin Gradle plugin" 错误） ----------
+      - name: Fix Kotlin version for Android build
+        shell: python
+        run: |
+          import re, os
+          # 定位所有 gradle 配置文件
+          files_to_check = ['android/build.gradle', 'android/settings.gradle']
+          target_kotlin = '1.9.22'
+          for f in files_to_check:
+              if not os.path.exists(f):
+                  print(f"{f}: 不存在，跳过")
+                  continue
+              with open(f, 'r', encoding='utf-8') as fp:
+                  content = fp.read()
+              # 替换 kotlin_version = "x.y.z" / kotlin_version = 'x.y.z' / id "org.jetbrains.kotlin:kotlin-gradle-plugin:x.y.z"
+              new_content = re.sub(
+                  r'(kotlin_version\s*[:=]\s*)["\'][\d.]+["\']',
+                  lambda m: f'{m.group(1)}"{target_kotlin}"',
+                  content
+              )
+              new_content = re.sub(
+                  r'(org\.jetbrains\.kotlin:kotlin-gradle-plugin:)[\d.]+',
+                  lambda m: f'{m.group(1)}{target_kotlin}',
+                  new_content
+              )
+              if new_content != content:
+                  with open(f, 'w', encoding='utf-8') as fp:
+                      fp.write(new_content)
+                  print(f"{f}: 已更新 Kotlin 到 {target_kotlin}")
+              else:
+                  print(f"{f}: 未发现需要更新")
+          # 打印关键信息供调试
+          for f in files_to_check:
+              if os.path.exists(f):
+                  with open(f) as fp:
+                      text = fp.read()
+                  print(f"\n=== {f} (Kotlin 相关行) ===")
+                  for line in text.split('\n'):
+                      if 'kotlin' in line.lower() or 'gradle' in line.lower():
+                          print("  " + line.strip()[:120])
+
       # ---------- 4. 获取依赖 ----------
       - name: Flutter pub get
         run: flutter pub get
