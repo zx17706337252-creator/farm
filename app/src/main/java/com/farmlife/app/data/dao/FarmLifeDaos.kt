@@ -3,7 +3,6 @@ package com.farmlife.app.data.dao
 import androidx.room.*
 import com.farmlife.app.data.entity.*
 
-/**
 
 /**
  * Player DAO
