@@ -140,9 +140,7 @@ fun PondCard(
                 LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
                     items(fishInPond) { fish ->
                         val cfg = FishConfigs.getById(fish.configId)
-                        FishItem(fish = fish, cfg = cfg, engine = engine) {
-                            rememberCoroutineScope().launch { engine.collectFish(fish.fishId) }
-                        }
+                        FishItem(fish = fish, cfg = cfg, engine = engine, fishId = fish.fishId)
                     }
                 }
             } else if (pond.unlocked) {
@@ -157,8 +155,9 @@ fun FishItem(
     fish: com.farmlife.app.data.entity.FishInstanceEntity,
     cfg: com.farmlife.app.config.FishConfig?,
     engine: FarmEngine,
-    onCollect: () -> Unit
+    fishId: Int
 ) {
+    val scope = rememberCoroutineScope()
     val now = System.currentTimeMillis()
     val isReady = now >= fish.finishTime
 
@@ -172,7 +171,7 @@ fun FishItem(
             Text(if (isReady) "🐠 可收获" else "🐟 生长中", style = MaterialTheme.typography.bodySmall)
         }
         if (isReady) {
-            Button(onClick = onCollect, modifier = Modifier.size(36.dp), contentPadding = PaddingValues(0.dp)) {
+            Button(onClick = { scope.launch { engine.collectFish(fishId) } }, modifier = Modifier.size(36.dp), contentPadding = PaddingValues(0.dp)) {
                 Text("收")
             }
         }
