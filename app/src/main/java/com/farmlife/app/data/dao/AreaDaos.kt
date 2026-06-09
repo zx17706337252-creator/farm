@@ -50,6 +50,9 @@ interface PondDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(pond: PondInstanceEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(ponds: List<PondInstanceEntity>)
+
     @Update
     suspend fun update(pond: PondInstanceEntity)
 }

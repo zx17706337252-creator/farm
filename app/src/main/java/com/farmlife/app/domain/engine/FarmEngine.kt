@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  * FarmEngine - 农场游戏核心引擎
  * 处理所有游戏逻辑：种植、收获、动物生产、宠物工作、加工、订单等
  */
-class FarmEngine(private val repository: FarmLifeRepository) {
+class FarmEngine(val repository: FarmLifeRepository) {
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
@@ -365,7 +365,7 @@ class FarmEngine(private val repository: FarmLifeRepository) {
             AnimalLevelingSystem.efficiencyMultiplier(animal.level)
         )
         val productTime = (cfg.productTimeSeconds * 1000L / efficiency).toLong()
-        val now = TimeSystem.currentTimeMillis()
+        val now = TimeSystem.currentTimeMs()
         if (now - animal.lastProduceTime < productTime) {
             showToast("尚未生产完成")
             return
