@@ -151,9 +151,9 @@ fun MainAppScreen(engine: FarmEngine) {
             }
         },
         snackbarHost = {
-            toast?.let {
+            toast?.let { msg ->
                 SnackbarHost(hostState = remember { SnackbarHostState() }) {
-                    Snackbar { Text(it) }
+                    Snackbar { Text(msg) }
                 }
             }
         }

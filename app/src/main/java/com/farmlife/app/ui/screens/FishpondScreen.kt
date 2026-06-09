@@ -24,7 +24,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FishpondScreen(engine: FarmEngine) {
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     val ponds by engine.ponds.collectAsState()
     val fish by engine.fish.collectAsState()
     val player by engine.player.collectAsState()
@@ -54,7 +54,7 @@ fun FishpondScreen(engine: FarmEngine) {
                         fishInPond = fish.filter { it.pondId == pond.pondId.toInt() },
                         engine = engine,
                         onUnlock = {
-                            coroutineScope.launch { engine.unlockPond(pond.pondId) }
+                            scope.launch { engine.unlockPond(pond.pondId) }
                         },
                         onAddFish = {
                             selectedPondId = pond.pondId.toInt()
@@ -81,7 +81,7 @@ fun FishpondScreen(engine: FarmEngine) {
                                 .padding(vertical = 6.dp)
                                 .clickable {
                                     if (canBuy) {
-                                        coroutineScope.launch {
+                                        scope.launch {
                                             engine.addFish(selectedPondId, fish.fishId)
                                             showAddFishDialog = false
                                         }
@@ -141,7 +141,7 @@ fun PondCard(
                     items(fishInPond) { fish ->
                         val cfg = FishConfigs.getById(fish.configId)
                         FishItem(fish = fish, cfg = cfg, engine = engine) {
-                            coroutineScope.launch { engine.collectFish(fish.fishId) }
+                            scope.launch { engine.collectFish(fish.fishId) }
                         }
                     }
                 }
