@@ -1,8 +1,4 @@
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-}
+// 保留build.gradle（Groovy版本）为当前使用中，此文件为备用版本
 
 android {
     namespace = "com.farmlife.app"
