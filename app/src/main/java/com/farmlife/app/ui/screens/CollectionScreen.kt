@@ -2,16 +2,13 @@ package com.farmlife.app.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,10 +18,24 @@ import com.farmlife.app.data.model.Weather
 import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
 
-/**
- * 图鉴界面 - 精美版本
- */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun qualityColor(quality: Int): Color = when (quality) {
+    0 -> Color(0xFF9E9E9E)
+    1 -> Color(0xFF4CAF50)
+    2 -> Color(0xFF2196F3)
+    3 -> Color(0xFF9C27B0)
+    4 -> Color(0xFFFF9800)
+    else -> Color(0xFFE53935)
+}
+
+private fun qualityText(quality: Int): String = when (quality) {
+    0 -> "普通"
+    1 -> "良好"
+    2 -> "精良"
+    3 -> "稀有"
+    4 -> "史诗"
+    else -> "传说"
+}
+
 @Composable
 fun CollectionScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val collections by engine.collections.collectAsState()
@@ -47,132 +58,168 @@ fun CollectionScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
         Weather.METEOR -> "☄️"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopStatusBar(
-                gold = player?.gold ?: 0L,
-                level = player?.level ?: 1,
-                collectionScore = player?.collectionScore ?: 0,
-                season = seasonText,
-                weather = weatherEmoji,
-                onBack = onBack,
-                title = "📚 图鉴"
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFF3E5F5),
+                    Color(0xFFE1BEE7),
+                    Color(0xFFCE93D8),
+                    Color(0xFFAB47BC)
+                )
             )
+        )
+    ) {
+        CompactTopBar(
+            title = "📚 图鉴",
+            gold = player?.gold ?: 0L,
+            level = player?.level ?: 1,
+            season = seasonText,
+            weather = weatherEmoji,
+            onBack = onBack
+        )
 
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            GradientCard(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+                gradient = GradientPurple,
+                shape = RoundedCornerShape(FarmRadiusMedium)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("📚", fontSize = 28.sp)
+                    Text("📚", fontSize = 22.sp)
                     Spacer(Modifier.width(8.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "图鉴",
+                            text = "图鉴",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = FarmBrown
+                            fontSize = 14.sp,
+                            color = Color.White
                         )
                         Text(
-                            "${collections.size} 项收藏",
-                            fontSize = 12.sp,
-                            color = FarmTextMuted
+                            text = "${collections.size} 项收藏",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                    Text(
+                        text = "Lv.${player?.level ?: 1}",
+                        fontSize = 11.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            if (collections.isEmpty()) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    gradient = GradientPurple,
+                    shape = RoundedCornerShape(FarmRadiusMedium)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text("📖", fontSize = 36.sp)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "图鉴是空的",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "收获作物、收集产品来完成图鉴！",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.9f)
                         )
                     }
                 }
-
-                Spacer(Modifier.height(12.dp))
-
-                if (collections.isEmpty()) {
-                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth().padding(20.dp)
-                        ) {
-                            Text("📖", fontSize = 48.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "图鉴是空的",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = FarmBrown
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "收获作物、收集产品来完成图鉴！",
-                                fontSize = 13.sp,
-                                color = FarmTextMuted
-                            )
-                        }
-                    }
-                } else {
-                    collections.forEach { col ->
-                        val qColor = qualityColor(col.highestQuality)
-                        Surface(
+            } else {
+                collections.forEach { col ->
+                    val qColor = qualityColor(col.highestQuality)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = 1.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            qColor.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 3.dp),
-                            color = Color.White,
-                            shape = RoundedCornerShape(12.dp),
-                            shadowElevation = 1.dp,
-                            border = androidx.compose.foundation.BorderStroke(
-                                0.5.dp,
-                                qColor.copy(alpha = 0.2f)
-                            )
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(FarmRadiusSmall))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(qColor.copy(alpha = 0.15f), qColor.copy(alpha = 0.3f))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(qColor.copy(alpha = 0.1f)),
-                                    contentAlignment = Alignment.Center
+                                Text(
+                                    when (col.collectionType) {
+                                        "CROP" -> "🌱"
+                                        "ANIMAL" -> "🐄"
+                                        "PET" -> "🐕"
+                                        else -> "📦"
+                                    },
+                                    fontSize = 18.sp
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${col.collectionType} #${col.configId}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = FarmText
+                                )
+                                Text(
+                                    text = "最高品质: ${qualityText(col.highestQuality)}",
+                                    fontSize = 10.sp,
+                                    color = FarmTextMuted
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Surface(
+                                    color = qColor,
+                                    shape = RoundedCornerShape(4.dp)
                                 ) {
                                     Text(
-                                        when (col.collectionType) {
-                                            "CROP" -> "🌱"
-                                            "ANIMAL" -> "🐄"
-                                            "PET" -> "🐕"
-                                            else -> "📦"
-                                        }, fontSize = 20.sp
-                                    )
-                                }
-                                Spacer(Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "${col.collectionType} #${col.configId}",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
-                                    Text(
-                                        "最高品质: ${col.highestQuality}",
+                                        " x${col.totalObtained} ",
                                         fontSize = 11.sp,
-                                        color = FarmTextMuted
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                     )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Surface(
-                                        color = qColor.copy(alpha = 0.15f),
-                                        shape = RoundedCornerShape(4.dp)
-                                    ) {
-                                        Text(
-                                            " x${col.totalObtained} ",
-                                            fontSize = 12.sp,
-                                            color = qColor,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                        )
-                                    }
                                 }
                             }
                         }

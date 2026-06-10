@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,10 +25,24 @@ import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
 
-/**
- * 商店界面 - 精美版本
- */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun qualityColor(quality: Int): Color = when (quality) {
+    0 -> Color(0xFF9E9E9E)
+    1 -> Color(0xFF4CAF50)
+    2 -> Color(0xFF2196F3)
+    3 -> Color(0xFF9C27B0)
+    4 -> Color(0xFFFF9800)
+    else -> Color(0xFFE53935)
+}
+
+private fun qualityText(quality: Int): String = when (quality) {
+    0 -> "普通"
+    1 -> "优秀"
+    2 -> "精良"
+    3 -> "稀有"
+    4 -> "史诗"
+    else -> "传说"
+}
+
 @Composable
 fun ShopScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
@@ -50,164 +65,284 @@ fun ShopScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
         Weather.METEOR -> "☄️"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopStatusBar(
-                gold = player?.gold ?: 0L,
-                level = player?.level ?: 1,
-                collectionScore = player?.collectionScore ?: 0,
-                season = seasonText,
-                weather = weatherEmoji,
-                onBack = onBack,
-                title = "🏪 商店"
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFFFF8E1),
+                    Color(0xFFFFECB3),
+                    Color(0xFFFFE0B2),
+                    Color(0xFFFFCC80)
+                )
             )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                ) {
-                    Text("🏪", fontSize = 28.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            "商店",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = FarmBrown
-                        )
-                        Text(
-                            "💰 ${player?.gold ?: 0} 金币",
-                            fontSize = 12.sp,
-                            color = FarmGold,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                var category by remember { mutableStateOf(0) }
-                ScrollableTabRow(
-                    selectedTabIndex = category,
-                    containerColor = Color.Transparent,
-                    contentColor = FarmBrown
-                ) {
-                    listOf("🌱 种子", "🐄 动物").forEachIndexed { index, name ->
-                        Tab(
-                            selected = category == index,
-                            onClick = { category = index },
-                            text = {
-                                Text(
-                                    name,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (category == index) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth()
-                ) {
-                    if (category == 0) {
-                        items(CropConfigs.ALL.take(20)) { crop ->
-                            ShopItemCard(
-                                icon = crop.icon,
-                                name = crop.name,
-                                price = crop.seedPrice,
-                                subText = "💰售价:${crop.sellPrice} ⏱${crop.growTimeSeconds}秒",
-                                canAfford = (player?.gold ?: 0) >= crop.seedPrice
-                            ) {
-                                coroutineScope.launch {
-                                    val lands = engine.lands.value
-                                    val crops = engine.crops.value
-                                    val freeLand = lands.firstOrNull { land ->
-                                        crops.none { it.landId == land.landId }
-                                    }
-                                    if (freeLand != null) {
-                                        engine.plantCrop(freeLand.landId, crop.cropId)
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        items(AnimalConfigs.ALL.take(10)) { animal ->
-                            ShopItemCard(
-                                icon = animal.icon,
-                                name = animal.name,
-                                price = animal.purchasePrice,
-                                subText = "💰产出:${animal.productName}×${animal.productSellPrice} Lv.${animal.unlockLevel}解锁",
-                                canAfford = (player?.gold ?: 0) >= animal.purchasePrice &&
-                                        (player?.level ?: 0) >= animal.unlockLevel
-                            ) {
-                                coroutineScope.launch { engine.buyAnimal(animal.animalId) }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ShopItemCard(
-    icon: String,
-    name: String,
-    price: Int,
-    subText: String,
-    canAfford: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        color = Color.White,
-        shape = RoundedCornerShape(14.dp),
-        shadowElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0x15000000))
+        )
     ) {
-        Row(
+        CompactTopBar(
+            title = "🏪 商店",
+            gold = player?.gold ?: 0L,
+            level = player?.level ?: 1,
+            season = seasonText,
+            weather = weatherEmoji,
+            onBack = onBack
+        )
+
+        var category by remember { mutableStateOf(0) }
+
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = canAfford) { if (canAfford) onClick() }
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
         ) {
-            Box(
+            // Tab selector
+            Row(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFFF5F5F5)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(icon, fontSize = 24.sp)
+                listOf("🌱 种子", "🐄 动物").forEachIndexed { index, name ->
+                    Surface(
+                        onClick = { category = index },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp),
+                        color = if (category == index) Color.Transparent else Color.White.copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = if (category == index) 2.dp else 0.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (category == index) FarmGold.copy(alpha = 0.4f) else Color(0x20000000)
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .then(
+                                    if (category == index) Modifier.background(GradientGold) else Modifier
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = name,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (category == index) Color.White else FarmBrown
+                            )
+                        }
+                    }
+                }
             }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = FarmText)
-                Text(subText, fontSize = 11.sp, color = FarmTextMuted)
+
+            Spacer(Modifier.height(4.dp))
+
+            // Stats header
+            GradientCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                gradient = GradientGold,
+                shape = RoundedCornerShape(FarmRadiusMedium)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("💰", fontSize = 22.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${player?.gold ?: 0} 金币",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Lv.${player?.level ?: 1}",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                    Text(
+                        text = if (category == 0) "购买种子" else "购买动物",
+                        fontSize = 11.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    "💰$price",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (canAfford) FarmGold else Color(0xFFCCCCCC)
-                )
-                if (canAfford) {
-                    Text("点击购买", fontSize = 10.sp, color = FarmGrassGreen)
-                } else {
-                    Text("金币不足", fontSize = 10.sp, color = Color(0xFFCCCCCC))
+
+            if (category == 0) {
+                CropConfigs.ALL.take(20).forEach { crop ->
+                    val canAfford = (player?.gold ?: 0) >= crop.seedPrice
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = 1.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (canAfford) FarmGold.copy(alpha = 0.3f) else Color(0x20000000)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = canAfford) {
+                                    if (canAfford) {
+                                        coroutineScope.launch {
+                                            val lands = engine.lands.value
+                                            val crops = engine.crops.value
+                                            val freeLand = lands.firstOrNull { land ->
+                                                crops.none { it.landId == land.landId }
+                                            }
+                                            if (freeLand != null) {
+                                                engine.plantCrop(freeLand.landId, crop.cropId)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(FarmRadiusSmall))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                Color(0xFFFFF3E0),
+                                                Color(0xFFFFE0B2)
+                                            )
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(crop.icon, fontSize = 20.sp)
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = crop.name,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = FarmText
+                                )
+                                Text(
+                                    text = "售价:${crop.sellPrice} · ${crop.growTimeSeconds}秒",
+                                    fontSize = 10.sp,
+                                    color = FarmTextMuted
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Surface(
+                                    color = if (canAfford) FarmGold else Color(0xFFBDBDBD),
+                                    shape = RoundedCornerShape(FarmRadiusSmall)
+                                ) {
+                                    Text(
+                                        text = " 💰${crop.seedPrice} ",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = if (canAfford) "点击购买" else "金币不足",
+                                    fontSize = 9.sp,
+                                    color = if (canAfford) FarmBrown else Color(0xFFBDBDBD)
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                AnimalConfigs.ALL.take(10).forEach { animal ->
+                    val canAfford = (player?.gold ?: 0) >= animal.purchasePrice &&
+                            (player?.level ?: 0) >= animal.unlockLevel
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = 1.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (canAfford) FarmOrange.copy(alpha = 0.3f) else Color(0x20000000)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = canAfford) {
+                                    if (canAfford) {
+                                        coroutineScope.launch { engine.buyAnimal(animal.animalId) }
+                                    }
+                                }
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(FarmRadiusSmall))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                Color(0xFFFFF8E1),
+                                                Color(0xFFFFCC80)
+                                            )
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(animal.icon, fontSize = 20.sp)
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = animal.name,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = FarmText
+                                )
+                                Text(
+                                    text = "产出:${animal.productName} · Lv.${animal.unlockLevel}",
+                                    fontSize = 10.sp,
+                                    color = FarmTextMuted
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Surface(
+                                    color = if (canAfford) FarmOrange else Color(0xFFBDBDBD),
+                                    shape = RoundedCornerShape(FarmRadiusSmall)
+                                ) {
+                                    Text(
+                                        text = " 💰${animal.purchasePrice} ",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = if (canAfford) "点击购买" else "金币不足",
+                                    fontSize = 9.sp,
+                                    color = if (canAfford) FarmBrown else Color(0xFFBDBDBD)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

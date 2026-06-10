@@ -4,16 +4,14 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,10 +22,24 @@ import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.*
 
-/**
- * 农田界面 - 精美动态版本
- */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun qualityColor(quality: Int): Color = when (quality) {
+    0 -> Color(0xFF9E9E9E)
+    1 -> Color(0xFF4CAF50)
+    2 -> Color(0xFF2196F3)
+    3 -> Color(0xFF9C27B0)
+    4 -> Color(0xFFFF9800)
+    else -> Color(0xFFE53935)
+}
+
+private fun qualityText(quality: Int): String = when (quality) {
+    0 -> "普通"
+    1 -> "优秀"
+    2 -> "精良"
+    3 -> "稀有"
+    4 -> "史诗"
+    else -> "传说"
+}
+
 @Composable
 fun FarmlandScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
@@ -40,23 +52,22 @@ fun FarmlandScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     var selectedLandId by remember { mutableStateOf<Long?>(null) }
 
     val seasonText = when (season) {
-        com.farmlife.app.data.model.Season.SPRING -> "🌸 春天"
-        com.farmlife.app.data.model.Season.SUMMER -> "☀️ 夏天"
-        com.farmlife.app.data.model.Season.AUTUMN -> "🍂 秋天"
-        com.farmlife.app.data.model.Season.WINTER -> "❄️ 冬天"
+        Season.SPRING -> "🌸 春天"
+        Season.SUMMER -> "☀️ 夏天"
+        Season.AUTUMN -> "🍂 秋天"
+        Season.WINTER -> "❄️ 冬天"
     }
 
     val weatherIcon = when (weather) {
-        com.farmlife.app.data.model.Weather.SUNNY -> "☀️"
-        com.farmlife.app.data.model.Weather.CLOUDY -> "☁️"
-        com.farmlife.app.data.model.Weather.RAINY -> "🌧️"
-        com.farmlife.app.data.model.Weather.SNOWY -> "❄️"
-        com.farmlife.app.data.model.Weather.RAINBOW -> "🌈"
-        com.farmlife.app.data.model.Weather.METEOR -> "✨"
+        Weather.SUNNY -> "☀️"
+        Weather.CLOUDY -> "☁️"
+        Weather.RAINY -> "🌧️"
+        Weather.SNOWY -> "❄️"
+        Weather.RAINBOW -> "🌈"
+        Weather.METEOR -> "✨"
         else -> "🌤️"
     }
 
-    // 每秒刷新一次时间进度
     val ticker = produceState(initialValue = 0L) {
         while (isActive) {
             delay(1000)
@@ -65,136 +76,172 @@ fun FarmlandScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     }
     ticker.value
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(FarmBackgroundGradient)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            player?.let { p ->
-                TopStatusBar(
-                    gold = p.gold,
-                    level = p.level,
-                    collectionScore = p.collectionScore,
-                    season = seasonText,
-                    weather = weatherIcon,
-                    onBack = onBack,
-                    title = "🌾 农田"
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFE8F5E9),
+                    Color(0xFFC8E6C9),
+                    Color(0xFFA5D6A7),
+                    Color(0xFF81C784)
                 )
+            )
+        )
+    ) {
+        CompactTopBar(
+            title = "🌾 农田",
+            gold = player?.gold ?: 0L,
+            level = player?.level ?: 1,
+            season = seasonText,
+            weather = weatherIcon,
+            onBack = onBack
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Surface(
+                    onClick = { coroutineScope.launch { engine.harvestAllReady() } },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(FarmRadiusMedium),
+                    shadowElevation = 2.dp
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(GradientForest),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🌾 一键收获", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+                Surface(
+                    onClick = { coroutineScope.launch { engine.expandFarmland() } },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(FarmRadiusMedium),
+                    shadowElevation = 2.dp
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFF6D4C41), Color(0xFF5D4037))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🏗️ 扩建", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+                Surface(
+                    onClick = { coroutineScope.launch { engine.petAutoWork() } },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(FarmRadiusMedium),
+                    shadowElevation = 2.dp
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(GradientGold),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🐕 宠物", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(12.dp)
+            GlassCard(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                gradient = GradientForest,
+                shape = RoundedCornerShape(FarmRadiusMedium)
             ) {
-                // 顶部操作栏 - 精美按钮
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AnimatedButton(
-                        onClick = { coroutineScope.launch { engine.harvestAllReady() } },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("🌾 一键收获", fontSize = 12.sp)
-                    }
-                    AnimatedButton(
-                        onClick = { coroutineScope.launch { engine.expandFarmland() } },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = FarmBrown,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text("🏗️ 扩建", fontSize = 12.sp)
-                    }
-                    AnimatedButton(
-                        onClick = { coroutineScope.launch { engine.petAutoWork() } },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = FarmGold,
-                            contentColor = Color(0xFF3A2A00)
-                        )
-                    ) {
-                        Text("🐕 宠物", fontSize = 12.sp)
-                    }
-                }
-
-                // 玩家信息卡片 - 精美渐变
-                PremiumCard(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        player?.let { p ->
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("💰 ", fontSize = 18.sp)
-                                    Text(
-                                        "${p.gold}",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp,
-                                        color = FarmGold
-                                    )
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("⭐ ", fontSize = 14.sp)
-                                    Text(
-                                        "Lv.${p.level}",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = FarmGrassGreen
-                                    )
-                                }
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("🌱 ${landList.size} 块地", fontSize = 12.sp, color = FarmTextMuted)
-                                Text(
-                                    "🌾 ${crops.size} 株作物",
-                                    fontSize = 12.sp,
-                                    color = FarmTextMuted
-                                )
-                            }
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("💰 ", fontSize = 16.sp)
+                            Text(
+                                "${player?.gold ?: 0}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⭐ ", fontSize = 12.sp)
+                            Text(
+                                "Lv.${player?.level ?: 1}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.95f)
+                            )
                         }
                     }
-                }
-
-                // 土地网格 - 动态视觉
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(10),
-                    contentPadding = PaddingValues(2.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 2000.dp)
-                ) {
-                    gridItems(landList) { tile ->
-                        val crop = crops.firstOrNull { it.landId == tile.landId }
-                        FarmTile(
-                            landId = tile.landId,
-                            crop = crop,
-                            onClick = {
-                                if (crop == null) {
-                                    selectedLandId = tile.landId
-                                    showPlantDialog = true
-                                } else {
-                                    coroutineScope.launch { engine.harvestCrop(crop.instanceId) }
-                                }
-                            }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("🌱 ${landList.size} 块地", fontSize = 11.sp, color = Color.White.copy(alpha = 0.95f))
+                        Text(
+                            "🌾 ${crops.size} 株作物",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.95f)
                         )
                     }
+                }
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(8),
+                contentPadding = PaddingValues(2.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 3000.dp)
+            ) {
+                items(landList.size) { index ->
+                    val tile = landList[index]
+                    val crop = crops.firstOrNull { it.landId == tile.landId }
+                    FarmTile(
+                        landId = tile.landId,
+                        crop = crop,
+                        onClick = {
+                            if (crop == null) {
+                                selectedLandId = tile.landId
+                                showPlantDialog = true
+                            } else {
+                                coroutineScope.launch { engine.harvestCrop(crop.instanceId) }
+                            }
+                        }
+                    )
                 }
             }
         }
     }
 
-    // 种植弹窗
     val landIdForDialog = selectedLandId
     if (showPlantDialog && landIdForDialog != null) {
         PlantDialog(
@@ -211,10 +258,6 @@ fun FarmlandScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     }
 }
 
-/**
- * 动态农田格子 - 生长动画、成熟发光、品质颜色
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FarmTile(
     landId: Long,
@@ -240,53 +283,57 @@ fun FarmTile(
 
     val qColor = crop?.let { qualityColor(it.quality) } ?: Color.White
 
-    // 成熟时的呼吸发光效果
     if (isReady && crop != null) {
-        BreathAnimation(minScale = 0.95f, maxScale = 1.15f, durationMillis = 1800) { scale ->
-            Surface(
-                onClick = onClick,
+        Surface(
+            onClick = onClick,
+            modifier = Modifier.size(36.dp),
+            color = Color.Transparent,
+            shape = RoundedCornerShape(8.dp),
+            shadowElevation = 4.dp
+        ) {
+            Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale
-                    ),
-                color = Color(0xFFFFF59D),
-                shape = RoundedCornerShape(8.dp),
-                shadowElevation = 4.dp,
-                border = BorderStroke(1.5.dp, FarmGold)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            cropConfig?.icon ?: "🌱",
-                            fontSize = 16.sp
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFFFF9C4), Color(0xFFFFEB3B))
                         )
-                        Text("✓", fontSize = 7.sp, color = FarmGrassGreen, fontWeight = FontWeight.Bold)
-                    }
+                    )
+                    .clip(RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        cropConfig?.icon ?: "🌱",
+                        fontSize = 16.sp
+                    )
                 }
             }
         }
     } else if (growing && crop != null) {
-        // 生长中 - 渐变颜色 + 进度条
         Surface(
             onClick = onClick,
-            modifier = Modifier.size(34.dp),
-            color = Color(0xFFE8F5E9),
+            modifier = Modifier.size(36.dp),
+            color = Color.Transparent,
             shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, qColor.copy(alpha = 0.4f))
+            shadowElevation = 1.dp
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9))
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         cropConfig?.icon ?: "🌱",
-                        fontSize = 14.sp,
-                        modifier = Modifier.graphicsLayer(
-                            scaleX = 0.6f + progress * 0.4f,
-                            scaleY = 0.6f + progress * 0.4f
-                        )
+                        fontSize = 13.sp,
+                        modifier = Modifier
                     )
-                    // 进度条
                     Box(
                         modifier = Modifier
                             .width(24.dp)
@@ -306,25 +353,29 @@ fun FarmTile(
             }
         }
     } else {
-        // 空土地 - 点击种植
         Surface(
             onClick = onClick,
-            modifier = Modifier.size(34.dp),
-            color = Color(0xFFC9A87C),
+            modifier = Modifier.size(36.dp),
+            color = Color.Transparent,
             shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, Color(0xFF8B5E3C).copy(alpha = 0.6f))
+            shadowElevation = 1.dp
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("➕", fontSize = 14.sp, color = Color.White)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFA1887F), Color(0xFF8D6E63))
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("➕", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
 
-/**
- * 种植选择弹窗 - 精美版本
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlantDialog(
     engine: FarmEngine,
@@ -337,73 +388,82 @@ fun PlantDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = Color(0xFFFFFBF0),
         title = {
-            Text("🌱 选择要种植的作物", fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🌱 ", fontSize = 18.sp)
+                Text("选择作物", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = FarmBrown)
+            }
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 320.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                androidx.compose.foundation.lazy.LazyColumn(
-                    modifier = Modifier.heightIn(max = 350.dp)
-                ) {
-                    items(availableCrops) { crop ->
-                        val canAfford = (player?.gold ?: 0) >= crop.sellPrice * 2
-                        Surface(
+                availableCrops.forEach { crop ->
+                    val canAfford = (player?.gold ?: 0) >= crop.sellPrice * 2
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = if (canAfford) Color.White else Color(0xFFF5F5F5),
+                        shape = RoundedCornerShape(FarmRadiusSmall),
+                        shadowElevation = 1.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            0.5.dp,
+                            if (canAfford) FarmGreen.copy(alpha = 0.3f) else Color(0x15000000)
+                        )
+                    ) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (canAfford) Color(0xFFF5F5F5) else Color(0xFFE8E8E8),
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp,
-                            border = if (canAfford) BorderStroke(0.5.dp, Color(0x20000000)) else null
+                                .clickable(enabled = canAfford) {
+                                    if (canAfford) onPlant(crop.cropId)
+                                }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(enabled = canAfford) {
-                                        if (canAfford) onPlant(crop.cropId)
-                                    }
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                // 作物图标
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0xFFE8F5E9)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(crop.icon, fontSize = 24.sp)
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        crop.name,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-                                    val sec = crop.growTimeSeconds
-                                    val timeStr = if (sec < 60) "${sec}秒"
-                                    else if (sec < 3600) "${sec / 60}分${sec % 60}秒"
-                                    else "${sec / 3600}小时${(sec % 3600) / 60}分"
-                                    Text(
-                                        "⏱ $timeStr | 💰${crop.sellPrice} | ⭐${crop.exp}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = FarmTextMuted,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        "💰${crop.sellPrice * 2}",
-                                        fontWeight = FontWeight.Bold,
-                                        color = FarmGold,
-                                        fontSize = 13.sp
-                                    )
-                                }
+                                Text(crop.icon, fontSize = 18.sp)
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    crop.name,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = FarmText
+                                )
+                                val sec = crop.growTimeSeconds
+                                Text(
+                                    "⏱ ${sec}秒 | 💰${crop.sellPrice}",
+                                    fontSize = 10.sp,
+                                    color = FarmTextMuted
+                                )
+                            }
+                            Surface(
+                                color = if (canAfford) FarmGreen else Color(0xFFBDBDBD),
+                                shape = RoundedCornerShape(FarmRadiusSmall)
+                            ) {
+                                Text(
+                                    " 💰${crop.sellPrice * 2} ",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                )
                             }
                         }
                     }
@@ -411,8 +471,8 @@ fun PlantDialog(
             }
         },
         confirmButton = {
-            AnimatedButton(onClick = onDismiss) {
-                Text("取消")
+            TextButton(onClick = onDismiss) {
+                Text("取消", color = FarmBrown, fontSize = 12.sp)
             }
         }
     )

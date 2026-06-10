@@ -2,16 +2,13 @@ package com.farmlife.app.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,10 +19,24 @@ import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
 
-/**
- * 仓库界面 - 精美版本
- */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun qualityColor(quality: Int): Color = when (quality) {
+    0 -> Color(0xFF9E9E9E)
+    1 -> Color(0xFF4CAF50)
+    2 -> Color(0xFF2196F3)
+    3 -> Color(0xFF9C27B0)
+    4 -> Color(0xFFFF9800)
+    else -> Color(0xFFE53935)
+}
+
+private fun qualityText(quality: Int): String = when (quality) {
+    0 -> "普通"
+    1 -> "良好"
+    2 -> "精良"
+    3 -> "稀有"
+    4 -> "史诗"
+    else -> "传说"
+}
+
 @Composable
 fun InventoryScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
@@ -49,154 +60,209 @@ fun InventoryScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
         Weather.METEOR -> "☄️"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopStatusBar(
-                gold = player?.gold ?: 0L,
-                level = player?.level ?: 1,
-                collectionScore = player?.collectionScore ?: 0,
-                season = seasonText,
-                weather = weatherEmoji,
-                onBack = onBack,
-                title = "📦 仓库"
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFFFF3E0),
+                    Color(0xFFFFE0B2),
+                    Color(0xFFFFAB91),
+                    Color(0xFFEF5350)
+                )
             )
+        )
+    ) {
+        CompactTopBar(
+            title = "📦 仓库",
+            gold = player?.gold ?: 0L,
+            level = player?.level ?: 1,
+            season = seasonText,
+            weather = weatherEmoji,
+            onBack = onBack
+        )
 
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp)
+                GradientCard(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    gradient = GradientAutumn,
+                    shape = RoundedCornerShape(FarmRadiusMedium)
                 ) {
-                    Text("📦", fontSize = 28.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            "仓库",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = FarmBrown
-                        )
-                        Text(
-                            "${inventory.size} 件物品",
-                            fontSize = 12.sp,
-                            color = FarmTextMuted
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    AnimatedButton(
-                        onClick = { coroutineScope.launch { engine.sellAllInventory() } },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = FarmGold,
-                            contentColor = Color(0xFF3A2A00)
-                        )
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp)
                     ) {
-                        Text("全部卖出", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "📦 仓库",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "${inventory.size} 件物品",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
                     }
                 }
-
-                Spacer(Modifier.height(12.dp))
-
-                if (inventory.isEmpty()) {
-                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth().padding(20.dp)
-                        ) {
-                            Text("📦", fontSize = 48.sp)
-                            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.width(6.dp))
+                Surface(
+                    onClick = { coroutineScope.launch { engine.sellAllInventory() } },
+                    modifier = Modifier
+                        .height(52.dp)
+                        .width(84.dp),
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(FarmRadiusMedium),
+                    shadowElevation = 2.dp
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(GradientGold),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("💰", fontSize = 12.sp)
                             Text(
-                                "仓库是空的",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = FarmBrown
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "收获作物和动物产品，增加仓库！",
-                                fontSize = 13.sp,
-                                color = FarmTextMuted
+                                "全部卖出",
+                                fontSize = 9.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
-                } else {
-                    inventory.forEach { item ->
-                        val qColor = qualityColor(item.quality)
-                        Surface(
+                }
+            }
+
+            if (inventory.isEmpty()) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    gradient = GradientAutumn,
+                    shape = RoundedCornerShape(FarmRadiusMedium)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text("📦", fontSize = 36.sp)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "仓库是空的",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "收获作物和动物产品，增加仓库！",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                }
+            } else {
+                inventory.forEach { item ->
+                    val qColor = qualityColor(item.quality)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = 1.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            qColor.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 3.dp),
-                            color = Color.White,
-                            shape = RoundedCornerShape(12.dp),
-                            shadowElevation = 1.dp,
-                            border = androidx.compose.foundation.BorderStroke(
-                                0.5.dp,
-                                qColor.copy(alpha = 0.2f)
-                            )
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(FarmRadiusSmall))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(qColor.copy(alpha = 0.15f), qColor.copy(alpha = 0.3f))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(qColor.copy(alpha = 0.1f)),
-                                    contentAlignment = Alignment.Center
+                                val icon = when (item.itemType) {
+                                    "CROP" -> "🌱"
+                                    "ANIMAL" -> "🥚"
+                                    "PROCESSED" -> "📦"
+                                    "TREE" -> "🍎"
+                                    "FISH" -> "🐟"
+                                    else -> "📦"
+                                }
+                                Text(icon, fontSize = 18.sp)
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${item.itemType} #${item.configId}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = FarmText
+                                )
+                                Text(
+                                    text = "数量: ${item.quantity}",
+                                    fontSize = 10.sp,
+                                    color = FarmTextMuted
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Surface(
+                                    color = qColor,
+                                    shape = RoundedCornerShape(4.dp)
                                 ) {
-                                    val icon = when (item.itemType) {
-                                        "CROP" -> "🌱"
-                                        "ANIMAL" -> "🥚"
-                                        "PROCESSED" -> "📦"
-                                        "TREE" -> "🍎"
-                                        "FISH" -> "🐟"
-                                        else -> "📦"
-                                    }
-                                    Text(icon, fontSize = 20.sp)
-                                }
-                                Spacer(Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        "${item.itemType} #${item.configId}",
+                                        " ${qualityText(item.quality)} ",
+                                        fontSize = 9.sp,
+                                        color = Color.White,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
-                                    Text(
-                                        "数量: ${item.quantity}",
-                                        fontSize = 11.sp,
-                                        color = FarmTextMuted
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                     )
                                 }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Surface(
-                                        color = qColor.copy(alpha = 0.15f),
-                                        shape = RoundedCornerShape(4.dp)
+                                Spacer(Modifier.height(4.dp))
+                                Surface(
+                                    onClick = {
+                                        coroutineScope.launch { engine.sellInventoryItem(item.itemId, 1) }
+                                    },
+                                    modifier = Modifier
+                                        .height(32.dp)
+                                        .width(54.dp),
+                                    color = Color.Transparent,
+                                    shape = RoundedCornerShape(FarmRadiusSmall),
+                                    shadowElevation = 1.dp
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(GradientGold),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            " ${qualityText(item.quality)} ",
-                                            fontSize = 10.sp,
-                                            color = qColor,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                    AnimatedButton(
-                                        onClick = {
-                                            coroutineScope.launch { engine.sellInventoryItem(item.itemId, 1) }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = FarmGold,
-                                            contentColor = Color(0xFF3A2A00)
-                                        )
-                                    ) {
-                                        Text("卖出", fontSize = 10.sp)
+                                        Text("卖出", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }

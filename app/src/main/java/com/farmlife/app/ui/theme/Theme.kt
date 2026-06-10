@@ -1,5 +1,11 @@
 package com.farmlife.app.ui.theme
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,686 +16,729 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.*
-import kotlin.math.sin
-import kotlin.math.cos
 
-// ============ 配色体系 ============
-val FarmBackground = Color(0xFFFFF5E1)        // 奶油色背景
-val FarmSurface = Color(0xFFFFFFFF)            // 卡片表面
-val FarmGrassGreen = Color(0xFF5DAF54)         // 农场绿（主色）
-val FarmGrassLight = Color(0xFF8BC78A)         // 浅绿
-val FarmBrown = Color(0xFF8B5E3C)              // 土褐色
-val FarmBrownLight = Color(0xFFB58868)          // 浅褐
-val FarmGold = Color(0xFFF2B705)               // 金黄
-val FarmGoldLight = Color(0xFFFFD95C)          // 浅金
-val FarmSoil = Color(0xFF6B4226)               // 土壤色
-val FarmSky = Color(0xFF87CEEB)                // 天空蓝
-val FarmPink = Color(0xFFF06292)               // 粉色（稀有）
-val FarmPurple = Color(0xFF7B1FA2)             // 紫色（史诗）
-val FarmRed = Color(0xFFE53935)                // 红色（传说）
-val FarmText = Color(0xFF2C2C2C)               // 主文字
-val FarmTextMuted = Color(0xFF7A7A7A)          // 副文字
+// ===================== 精致配色系统 =====================
 
-val SpringColor = Color(0xFFFFB7D5)
-val SummerColor = Color(0xFF87CEEB)
-val AutumnColor = Color(0xFFE8A87C)
-val WinterColor = Color(0xFFC7E9F0)
+val FarmLightGold = Color(0xFFFFD54F)
+val FarmGold = Color(0xFFFFB300)
+val FarmDeepGold = Color(0xFFFF8F00)
 
-val RainColor = Color(0xFF78909C)
-val SnowColor = Color(0xFFB0BEC5)
-val SunColor = Color(0xFFFFD54F)
-val RainbowColor = Color(0xFFCE93D8)
+val FarmLightGreen = Color(0xFF81C784)
+val FarmGreen = Color(0xFF66BB6A)
+val FarmDeepGreen = Color(0xFF388E3C)
 
-val LightColorScheme = lightColorScheme(
-    primary = FarmGrassGreen,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFE8F5E9),
-    onPrimaryContainer = FarmGrassGreen,
-    secondary = FarmBrown,
-    onSecondary = Color.White,
-    tertiary = FarmGold,
-    onTertiary = Color(0xFF3A2A00),
-    background = FarmBackground,
-    onBackground = FarmText,
-    surface = FarmSurface,
-    onSurface = FarmText,
-    surfaceVariant = Color(0xFFF5EFE0),
-    onSurfaceVariant = FarmBrown,
-    error = FarmRed,
-    onError = Color.White,
-    outline = Color(0xFFCFCFCF)
+val FarmLightBlue = Color(0xFF64B5F6)
+val FarmBlue = Color(0xFF42A5F5)
+val FarmDeepBlue = Color(0xFF1976D2)
+
+val FarmLightPink = Color(0xFFF48FB1)
+val FarmPink = Color(0xFFEC407A)
+
+val FarmLightPurple = Color(0xFFB39DDB)
+val FarmPurple = Color(0xFF7E57C2)
+
+val FarmLightCyan = Color(0xFF80DEEA)
+val FarmCyan = Color(0xFF26C6DA)
+
+val FarmLightOrange = Color(0xFFFFCC80)
+val FarmOrange = Color(0xFFFF9800)
+
+val FarmLightRed = Color(0xFFEF9A9A)
+val FarmRed = Color(0xFFE53935)
+
+val FarmText = Color(0xFF2C1810)
+val FarmTextMuted = Color(0xFF78909C)
+val FarmTextLight = Color(0xFFECEFF1)
+
+val FarmBrown = Color(0xFF5D4037)
+val FarmBrownDark = Color(0xFF3E2723)
+val FarmBrownLight = Color(0xFF8D6E63)
+
+// ===================== 渐变配色方案 =====================
+
+val GradientSunset = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFFF9966), Color(0xFFFF5E62))
 )
 
-val AppTypography = Typography(
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 22.sp
-    ),
-    titleMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 15.sp
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 13.sp
-    ),
-    labelLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 14.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 11.sp
-    )
+val GradientOcean = Brush.horizontalGradient(
+    colors = listOf(Color(0xFF2193B0), Color(0xFF6DD5ED))
 )
 
-// ============ 渐变背景 ============
+val GradientForest = Brush.horizontalGradient(
+    colors = listOf(Color(0xFF134E5E), Color(0xFF71B280))
+)
+
+val GradientGold = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFF2994A), Color(0xFFF2C94C))
+)
+
+val GradientPurple = Brush.horizontalGradient(
+    colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+)
+
+val GradientMint = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFA8EDEA), Color(0xFFFED6E3))
+)
+
+val GradientAurora = Brush.linearGradient(
+    colors = listOf(Color(0xFF4FACFE), Color(0xFF00F2FE), Color(0xFF43E97B))
+)
+
+val GradientSunrise = Brush.linearGradient(
+    colors = listOf(Color(0xFFFF512F), Color(0xFFF09819))
+)
+
+val GradientDeepSea = Brush.linearGradient(
+    colors = listOf(Color(0xFF2E3192), Color(0xFF1BFFFF))
+)
+
+val GradientSpring = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFA8E063), Color(0xFF56AB2F))
+)
+
+val GradientAutumn = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFF2994A), Color(0xFFEB5757))
+)
+
+val GradientWinter = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFE0EAFC), Color(0xFFCFDEF3))
+)
+
 val FarmBackgroundGradient = Brush.verticalGradient(
-    colors = listOf(
-        FarmBackground,
-        Color(0xFFFBEBC8),
-        FarmBackground
-    )
+    colors = listOf(Color(0xFFFFF8E7), Color(0xFFE8F5E9), Color(0xFFFFECB3))
 )
 
-val CardGoldGradient = Brush.horizontalGradient(
-    colors = listOf(FarmGoldLight, FarmGold, FarmGoldLight)
-)
+// ===================== 精致阴影阴影 =====================
 
-val CardGreenGradient = Brush.horizontalGradient(
-    colors = listOf(FarmGrassLight, FarmGrassGreen)
-)
+val FarmSmallShadow = 2.dp
+val FarmMediumShadow = 6.dp
+val FarmLargeShadow = 12.dp
+val FarmHugeShadow = 20.dp
 
-// ============ 精美的卡片样式 ============
-@Composable
-fun PremiumCard(
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp),
-    content: @Composable ColumnScope.() -> Unit
-) {
-    androidx.compose.material3.Surface(
-        modifier = modifier,
-        color = FarmSurface,
-        shape = shape,
-        shadowElevation = 3.dp,
-        tonalElevation = 2.dp,
-        border = BorderStroke(0.5.dp, Color(0x20000000))
-    ) {
-        Column(modifier = Modifier.padding(16.dp), content = content)
-    }
-}
+// ===================== 圆角配置 =====================
 
-// ============ 动画按钮 ============
-@Composable
-fun AnimatedButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    colors: ButtonColors = ButtonDefaults.buttonColors(
-        containerColor = FarmGrassGreen,
-        contentColor = Color.White,
-        disabledContainerColor = Color(0xFFC0C0C0),
-        disabledContentColor = Color.White
-    ),
-    content: @Composable RowScope.() -> Unit
-) {
-    var pressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.94f else 1f,
-        animationSpec = tween(durationMillis = 150),
-        label = "btn_scale"
-    )
+val FarmRadiusSmall = 8.dp
+val FarmRadiusMedium = 12.dp
+val FarmRadiusLarge = 16.dp
+val FarmRadiusHuge = 24.dp
+val FarmRadiusCircle = 9999.dp
 
-    Button(
-        onClick = onClick,
-        modifier = modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        },
-        enabled = enabled,
-        colors = colors,
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
-    ) {
-        content()
-    }
-}
-
-// ============ 呼吸动画 ============
-@Composable
-fun BreathAnimation(
-    minScale: Float = 0.94f,
-    maxScale: Float = 1.06f,
-    durationMillis: Int = 2000,
-    content: @Composable (Float) -> Unit
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "breath")
-    val progress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = androidx.compose.animation.core.EaseInOutSine),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "breath_progress"
-    )
-    val scale = minScale + (maxScale - minScale) * progress
-    content(scale)
-}
-
-// ============ 发光闪烁动画 ============
-@Composable
-fun ShimmerAnimation(
-    durationMillis: Int = 1500,
-    content: @Composable (Float) -> Unit
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = androidx.compose.animation.core.EaseInOutSine),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "shimmer_alpha"
-    )
-    content(alpha)
-}
-
-// ============ 上下浮动动画 ============
-@Composable
-fun FloatAnimation(
-    amplitude: Float = 8f,
-    durationMillis: Int = 2500,
-    content: @Composable (Float) -> Unit
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "float")
-    val progress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = androidx.compose.animation.core.EaseInOutSine),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "float_progress"
-    )
-    val offset = sin(progress * Math.PI * 2).toFloat() * amplitude
-    content(offset)
-}
-
-// ============ 品质颜色 ============
-fun qualityColor(quality: Int): Color = when (quality) {
-    0 -> Color(0xFF7A7A7A)      // 普通 - 灰
-    1 -> FarmGrassGreen          // 良好 - 绿
-    2 -> Color(0xFF4FC3F7)        // 稀有 - 蓝
-    3 -> FarmPink                 // 史诗 - 粉
-    4 -> FarmGold                 // 传说 - 金
-    5 -> Color(0xFFE040FB)        // 神话 - 紫彩
-    else -> FarmRed               // 错误 - 红
-}
-
-fun qualityText(quality: Int): String = when (quality) {
-    0 -> "普通"
-    1 -> "良好"
-    2 -> "稀有"
-    3 -> "史诗"
-    4 -> "传说"
-    5 -> "神话"
-    else -> "未知"
-}
-
-// ============ 高级过渡动画 ============
-
-/**
- * 模块进入动画 - 从世界地图点击后展开
- */
-@Composable
-fun ModuleEnterAnimation(
-    visible: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(
-            animationSpec = tween(durationMillis = 300)
-        ) + scaleIn(
-            initialScale = 0.3f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            )
-        ) + expandIn(
-            expandFrom = Alignment.Center,
-            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
-        ),
-        exit = fadeOut(
-            animationSpec = tween(durationMillis = 200)
-        ) + shrinkOut(
-            shrinkTowards = Alignment.Center,
-            animationSpec = tween(durationMillis = 250)
-        ),
-        modifier = modifier
-    ) {
-        content()
-    }
-}
-
-/**
- * 模块背景渐显动画
- */
-@Composable
-fun BackgroundRevealAnimation(
-    visible: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(
-            animationSpec = tween(durationMillis = 600)
-        ),
-        exit = fadeOut(
-            animationSpec = tween(durationMillis = 300)
-        ),
-        modifier = modifier
-    ) {
-        content()
-    }
-}
-
-/**
- * 粒子爆炸动画 - 点击时的火花效果
- */
-@Composable
-fun ParticleExplosion(
-    visible: Boolean,
-    color: Color = FarmGold,
-    modifier: Modifier = Modifier
-) {
-    if (!visible) return
-
-    val particles = remember { (1..8).toList() }
-
-    particles.forEach { index ->
-        val angle = (index * 45f * Math.PI / 180f).toFloat()
-        val infiniteTransition = rememberInfiniteTransition(label = "particle_$index")
-        val progress by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1000),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "particle_prog_$index"
-        )
-
-        val distance = 30.dp * progress
-        val offsetX = cos(angle) * distance.value
-        val offsetY = sin(angle) * distance.value
-
-        Box(
-            modifier = modifier
-                .graphicsLayer {
-                    translationX = offsetX
-                    translationY = offsetY
-                    alpha = 1f - progress
-                    scaleX = 1f - progress * 0.5f
-                    scaleY = 1f - progress * 0.5f
-                }
-                .size(8.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(color)
-        )
-    }
-}
-
-/**
- * 世界地图区域标记的呼吸动画
- */
-@Composable
-fun MapMarkerPulse(
-    content: @Composable () -> Unit
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "marker_pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.08f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_scale"
-    )
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_glow"
-    )
-
-    Box(
-        modifier = Modifier
-            .graphicsLayer {
-                scaleX = pulseScale
-                scaleY = pulseScale
-            }
-    ) {
-        content()
-    }
-}
-
-/**
- * 云朵飘动动画（世界地图背景装饰）
- */
-@Composable
-fun FloatingCloud(
-    offsetX: Float,
-    offsetY: Float,
-    size: Int,
-    speed: Int = 15000
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "cloud")
-    val floatX by infiniteTransition.animateFloat(
-        initialValue = -200f,
-        targetValue = 2000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = speed, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "cloud_x"
-    )
-
-    Box(
-        modifier = Modifier
-            .absoluteOffset {
-                IntOffset(
-                    x = (floatX + offsetX).toInt(),
-                    y = offsetY.toInt()
-                )
-            }
-    ) {
-        Text("☁️", fontSize = size.sp, color = Color.White.copy(alpha = 0.6f))
-    }
-}
-
-/**
- * 太阳/月亮动画
- */
-@Composable
-fun SunAnimation(
-    visible: Boolean
-) {
-    if (!visible) return
-
-    val infiniteTransition = rememberInfiniteTransition(label = "sun")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 30000, easing = LinearEasing)
-        ),
-        label = "sun_rot"
-    )
-    val pulse by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "sun_pulse"
-    )
-
-    Box(
-        modifier = Modifier
-            .graphicsLayer {
-                rotationZ = rotation
-                scaleX = pulse
-                scaleY = pulse
-            }
-    ) {
-        Text("☀️", fontSize = 48.sp)
-    }
-}
-
-/**
- * 世界地图区域按钮
- */
-@Composable
-fun WorldMapRegionButton(
-    icon: String,
-    label: String,
-    color: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isUnlocked: Boolean = true,
-    size: Int = 80
-) {
-    var pressed by remember { mutableStateOf(false) }
-    val pressScale by animateFloatAsState(
-        targetValue = if (pressed) 0.9f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "press"
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-    ) {
-        MapMarkerPulse {
-            Box(
-                modifier = Modifier
-                    .size(size.dp)
-                    .graphicsLayer {
-                        scaleX = pressScale
-                        scaleY = pressScale
-                        transformOrigin = TransformOrigin.Center
-                    }
-                    .clip(RoundedCornerShape(20.dp))
-                    .clickable(enabled = isUnlocked) { onClick() }
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                pressed = event.changes.any { it.pressed }
-                            }
-                        }
-                    }
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                color.copy(alpha = 0.95f),
-                                color.copy(alpha = 0.7f)
-                            )
-                        )
-                    )
-                    .border(
-                        width = 3.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.8f),
-                                color,
-                                Color.White.copy(alpha = 0.6f)
-                            )
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = icon,
-                    fontSize = (size * 0.5).sp,
-                    style = TextStyle(
-                        shadow = Shadow(
-                            color = Color.Black.copy(alpha = 0.3f),
-                            offset = Offset(2f, 2f),
-                            blurRadius = 4f
-                        )
-                    )
-                )
-            }
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = if (isUnlocked) label else "🔒 $label",
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-            color = if (isUnlocked) FarmBrown else FarmTextMuted
-        )
-    }
-}
-
-/**
- * 顶部状态条（金币/等级等）
- */
-@Composable
-fun TopStatusBar(
-    gold: Long,
-    level: Int,
-    collectionScore: Int,
-    season: String,
-    weather: String,
-    onBack: (() -> Unit)? = null,
-    title: String = "呆柳的农场"
-) {
-    Surface(
-        color = Color(0xFFFAF1DB),
-        shadowElevation = 2.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (onBack != null) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onBack() }
-                            .background(Color.White.copy(alpha = 0.8f))
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        Text("← 返回", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FarmBrown)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text(
-                    "🌾",
-                    fontSize = 20.sp,
-                    modifier = Modifier.padding(end = 6.dp)
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = FarmBrown
-                    )
-                    Text(
-                        season,
-                        fontSize = 10.sp,
-                        color = FarmTextMuted
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFFFF9E0))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(weather, fontSize = 16.sp)
-                }
-            }
-
-            Spacer(Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                StatusChip("💰", "$gold", FarmGold, Color(0xFFFFF8E1), Modifier.weight(1f))
-                StatusChip("⭐", "Lv.$level", FarmGrassGreen, Color(0xFFE8F5E9), Modifier.weight(1f))
-                StatusChip("📚", "$collectionScore", FarmPink, Color(0xFFF3E5F5), Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatusChip(
-    icon: String,
-    text: String,
-    textColor: Color,
-    bgColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        color = bgColor,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(0.5.dp, textColor.copy(alpha = 0.3f)),
-        modifier = modifier
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(4.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(icon, fontSize = 11.sp)
-            Spacer(Modifier.width(2.dp))
-            Text(
-                text,
-                fontWeight = FontWeight.Bold,
-                color = textColor,
-                fontSize = 11.sp
-            )
-        }
-    }
-}
+// ===================== 主题组件 =====================
 
 @Composable
 fun FarmLifeTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = LightColorScheme,
-        typography = AppTypography,
+        typography = Typography,
         content = content
     )
+}
+
+private val LightColorScheme = lightColorScheme(
+    primary = FarmGold,
+    onPrimary = Color.White,
+    secondary = FarmGreen,
+    onSecondary = Color.White,
+    tertiary = FarmOrange,
+    background = Color(0xFFFFFBF0),
+    surface = Color.White,
+    onBackground = FarmText,
+    onSurface = FarmText,
+    outline = Color(0xFFD7CCC8)
+)
+
+private val Typography = androidx.compose.material3.Typography(
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        color = FarmText
+    )
+)
+
+// ===================== 渐变卡片容器 =====================
+
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    gradient: Brush = GradientGold,
+    shape: Shape = RoundedCornerShape(FarmRadiusLarge),
+    content: @Composable BoxScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .clip(shape)
+            .shadow(FarmMediumShadow, shape),
+        color = Color.White.copy(alpha = 0.92f),
+        shape = shape,
+        border = BorderStroke(1.5.dp, Color(0x33FFFFFF))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White,
+                            Color.White.copy(alpha = 0.85f)
+                        )
+                    )
+                ),
+            content = content
+        )
+    }
+}
+
+// ===================== 渐变按钮 =====================
+
+@Composable
+fun GradientButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    gradient: Brush = GradientGold,
+    icon: String? = null,
+    enabled: Boolean = true
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.96f else 1f,
+        animationSpec = tween(150),
+        label = "button_scale"
+    )
+
+    Surface(
+        modifier = modifier
+            .scale(scale)
+            .clip(RoundedCornerShape(FarmRadiusMedium))
+            .clickable(enabled = enabled) {
+                pressed = true
+                onClick()
+                pressed = false
+            },
+        color = Color.Transparent,
+        contentColor = Color.Transparent,
+        shadowElevation = if (enabled) FarmMediumShadow else 0.dp,
+        shape = RoundedCornerShape(FarmRadiusMedium)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(if (enabled) gradient else Brush.horizontalGradient(listOf(Color(0xFFBDBDBD), Color(0xFF9E9E9E)))),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                icon?.let { Text(it, fontSize = 14.sp) }
+                Text(
+                    text = text,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    style = TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color(0x40000000),
+                            offset = androidx.compose.ui.geometry.Offset(1f, 1f)
+                        )
+                    )
+                )
+            }
+        }
+    }
+}
+
+// ===================== 发光按钮 =====================
+
+@Composable
+fun GlowButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    glowColor: Color = FarmGold,
+    icon: String? = null,
+    enabled: Boolean = true
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "glow")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow_alpha"
+    )
+
+    Box(
+        modifier = modifier
+            .shadow(if (enabled) 8.dp else 0.dp, ambientColor = glowColor.copy(alpha = glowAlpha))
+    ) {
+        GradientButton(
+            text = text,
+            onClick = onClick,
+            gradient = Brush.horizontalGradient(
+                colors = listOf(glowColor.copy(alpha = 0.9f), glowColor)
+            ),
+            icon = icon,
+            enabled = enabled
+        )
+    }
+}
+
+// ===================== 紧凑状态栏 =====================
+
+@Composable
+fun CompactTopBar(
+    title: String,
+    gold: Long,
+    level: Int,
+    season: String,
+    weather: String,
+    onBack: (() -> Unit)? = null
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        color = Color.Transparent,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // 返回按钮
+            if (onBack != null) {
+                Surface(
+                    onClick = onBack,
+                    color = Color.White.copy(alpha = 0.85f),
+                    shape = RoundedCornerShape(FarmRadiusSmall),
+                    shadowElevation = 2.dp,
+                    border = BorderStroke(1.dp, Color(0x20000000))
+                ) {
+                    Box(
+                        modifier = Modifier.size(44.dp, 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("←", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = FarmBrown)
+                    }
+                }
+            }
+
+            // 标题
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = FarmBrown,
+                modifier = Modifier.padding(end = 4.dp)
+            )
+
+            // 金币
+            Surface(
+                color = Color.White.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(FarmRadiusCircle),
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, FarmGold.copy(alpha = 0.4f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("💰", fontSize = 12.sp)
+                    Text(
+                        text = formatNumber(gold),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = FarmBrown
+                    )
+                }
+            }
+
+            // 等级
+            Surface(
+                color = Color.White.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(FarmRadiusCircle),
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, FarmGreen.copy(alpha = 0.4f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("⭐", fontSize = 12.sp)
+                    Text(
+                        text = "Lv.$level",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = FarmBrown
+                    )
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            // 季节
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(season, fontSize = 12.sp)
+                Text(weather, fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+private fun formatNumber(num: Long): String {
+    return when {
+        num >= 100000000 -> "${num / 100000000}亿"
+        num >= 10000 -> "${num / 10000}万"
+        num >= 1000 -> "${num / 1000}k"
+        else -> num.toString()
+    }
+}
+
+// ===================== 数字格式化 =====================
+
+fun formatGold(gold: Long): String = formatNumber(gold)
+fun formatLevel(level: Int): String = "Lv.$level"
+
+// ===================== 动画容器 =====================
+
+@Composable
+fun ModuleAnimation(
+    visible: Boolean,
+    content: @Composable () -> Unit
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(animationSpec = tween(300)) +
+            scaleIn(
+                initialScale = 0.92f,
+                animationSpec = tween(400, easing = FastOutSlowInEasing)
+            ),
+        exit = fadeOut(animationSpec = tween(200)) +
+            scaleOut(
+                targetScale = 0.92f,
+                animationSpec = tween(200)
+            )
+    ) {
+        content()
+    }
+}
+
+// ===================== 呼吸光晕组件 =====================
+
+@Composable
+fun BreathingGlow(
+    color: Color = FarmGold,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "breathing")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    Box {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            color.copy(alpha = alpha),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+        content()
+    }
+}
+
+// ===================== 悬浮动画组件 =====================
+
+@Composable
+fun FloatingAnimation(
+    offsetRange: Int = 8,
+    duration: Int = 3000,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "floating")
+    val float by infiniteTransition.animateFloat(
+        initialValue = -offsetRange.toFloat(),
+        targetValue = offsetRange.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(duration, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float_offset"
+    )
+
+    Box(modifier = Modifier.offset(y = float.dp)) {
+        content()
+    }
+}
+
+// ===================== 脉冲效果 =====================
+
+@Composable
+fun PulseAnimation(
+    pulseRange: Float = 0.06f,
+    duration: Int = 1800,
+    content: @Composable () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f - pulseRange,
+        targetValue = 1f + pulseRange,
+        animationSpec = infiniteRepeatable(
+            animation = tween(duration, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_scale"
+    )
+    Box(modifier = Modifier.scale(scale)) {
+        content()
+    }
+}
+
+// ===================== 渐变卡片 =====================
+
+@Composable
+fun GradientCard(
+    modifier: Modifier = Modifier,
+    gradient: Brush = GradientGold,
+    shape: Shape = RoundedCornerShape(FarmRadiusLarge),
+    content: @Composable BoxScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .clip(shape)
+            .shadow(FarmMediumShadow, shape),
+        color = Color.Transparent,
+        shape = shape
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(gradient),
+            content = content
+        )
+    }
+}
+
+// ===================== 模块图标卡片 =====================
+
+@Composable
+fun ModuleIconCard(
+    icon: String,
+    label: String,
+    color: Color,
+    description: String? = null,
+    isUnlocked: Boolean = true,
+    unlockText: String = "",
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.94f else 1f,
+        animationSpec = tween(120),
+        label = "module_press"
+    )
+
+    Surface(
+        modifier = modifier
+            .scale(scale)
+            .clickable(enabled = isUnlocked) {
+                pressed = true
+                onClick()
+                pressed = false
+            },
+        color = Color.White.copy(alpha = 0.95f),
+        shape = RoundedCornerShape(FarmRadiusLarge),
+        shadowElevation = if (isUnlocked) FarmMediumShadow else 1.dp,
+        border = BorderStroke(
+            width = 2.dp,
+            color = if (isUnlocked) color else Color(0xFFBDBDBD)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 图标
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(FarmRadiusSmall))
+                    .background(
+                        if (isUnlocked) color.copy(alpha = 0.18f)
+                        else Color(0xFFBDBDBD).copy(alpha = 0.15f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(icon, fontSize = 22.sp)
+            }
+
+            // 文本
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isUnlocked) FarmText else Color(0xFF9E9E9E)
+                )
+                description?.let {
+                    Text(
+                        text = it,
+                        fontSize = 10.sp,
+                        color = if (isUnlocked) FarmTextMuted else Color(0xFFBDBDBD),
+                        maxLines = 1
+                    )
+                }
+            }
+
+            // 状态指示
+            if (isUnlocked) {
+                Box(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(RoundedCornerShape(FarmRadiusSmall))
+                        .background(color),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("→", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(FarmRadiusSmall))
+                        .background(Color(0xFFBDBDBD))
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(unlockText, fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+// ===================== 装饰性星星粒子 =====================
+
+@Composable
+fun SparkleParticle(
+    color: Color = FarmGold,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "sparkle")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "sparkle_scale"
+    )
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "sparkle_alpha"
+    )
+
+    Box(
+        modifier = modifier.scale(scale),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "✦",
+            fontSize = 8.sp,
+            color = color.copy(alpha = alpha),
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+// ===================== 精美渐变文本 =====================
+
+@Composable
+fun GradientText(
+    text: String,
+    gradient: Brush = GradientGold,
+    fontSize: Int = 16,
+    fontWeight: FontWeight = FontWeight.Bold
+) {
+    Text(
+        text = text,
+        fontSize = fontSize.sp,
+        fontWeight = fontWeight,
+        color = Color.White
+    )
+}
+
+// ===================== 精美进度条 =====================
+
+@Composable
+fun DecorativeProgressBar(
+    progress: Float,
+    color: Color = FarmGold,
+    modifier: Modifier = Modifier,
+    height: Int = 6
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height.dp)
+            .clip(RoundedCornerShape(FarmRadiusCircle))
+            .background(Color(0x33000000))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(FarmRadiusCircle))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(color.copy(alpha = 0.7f), color, color.copy(alpha = 0.7f))
+                    )
+                )
+        )
+    }
 }

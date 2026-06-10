@@ -2,16 +2,13 @@ package com.farmlife.app.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,10 +20,15 @@ import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
 
-/**
- * 工坊界面 - 精美版本
- */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun qualityColor(quality: Int): Color = when (quality) {
+    0 -> Color(0xFF9E9E9E)
+    1 -> Color(0xFF4CAF50)
+    2 -> Color(0xFF2196F3)
+    3 -> Color(0xFF9C27B0)
+    4 -> Color(0xFFFF9800)
+    else -> Color(0xFFE53935)
+}
+
 @Composable
 fun FactoryScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
@@ -51,157 +53,226 @@ fun FactoryScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
         Weather.METEOR -> "☄️"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopStatusBar(
-                gold = player?.gold ?: 0L,
-                level = player?.level ?: 1,
-                collectionScore = player?.collectionScore ?: 0,
-                season = seasonText,
-                weather = weatherEmoji,
-                onBack = onBack,
-                title = "🏭 工坊"
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFE1F5FE),
+                    Color(0xFF81D4FA),
+                    Color(0xFF4FC3F7),
+                    Color(0xFF29B6F6)
+                )
             )
+        )
+    ) {
+        CompactTopBar(
+            title = "🏭 工坊",
+            gold = player?.gold ?: 0L,
+            level = player?.level ?: 1,
+            season = seasonText,
+            weather = weatherEmoji,
+            onBack = onBack
+        )
 
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            GradientCard(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+                gradient = GradientOcean,
+                shape = RoundedCornerShape(FarmRadiusMedium)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🏭", fontSize = 28.sp)
+                    Text("🏭", fontSize = 22.sp)
                     Spacer(Modifier.width(8.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "工坊",
+                            text = "工坊",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = FarmBrown
+                            fontSize = 14.sp,
+                            color = Color.White
                         )
                         Text(
-                            "${factories.size} 个工厂 · ${queues.size} 个生产任务",
-                            fontSize = 12.sp,
-                            color = FarmTextMuted
+                            text = "${factories.size} 个工厂 · ${queues.size} 个任务",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.9f)
                         )
                     }
+                    Text(
+                        text = "💰${player?.gold ?: 0}",
+                        fontSize = 11.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
+            }
 
-                Spacer(Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FactoryConfigs.ALL.take(3).forEach { factory ->
-                        AnimatedButton(
-                            onClick = {
-                                coroutineScope.launch { engine.buyFactory(factory.factoryId) }
-                            },
-                            modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FactoryConfigs.ALL.take(3).forEach { factory ->
+                    Surface(
+                        onClick = {
+                            coroutineScope.launch { engine.buyFactory(factory.factoryId) }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(60.dp),
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = 2.dp
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(GradientOcean),
+                            contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(factory.icon, fontSize = 16.sp)
+                                Text(factory.icon, fontSize = 14.sp)
                                 Text(
                                     "💰${factory.purchasePrice}",
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
+                                    color = Color.White,
                                     modifier = Modifier.padding(top = 2.dp)
                                 )
                             }
                         }
                     }
                 }
+            }
 
-                if (factories.isEmpty() && queues.isEmpty()) {
-                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth().padding(20.dp)
-                        ) {
-                            Text("🔧", fontSize = 48.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "还没有工厂",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = FarmBrown
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "购买工厂开始加工产品吧！",
-                                fontSize = 13.sp,
-                                color = FarmTextMuted
-                            )
-                        }
+            if (factories.isEmpty() && queues.isEmpty()) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    gradient = GradientOcean,
+                    shape = RoundedCornerShape(FarmRadiusMedium)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text("🔧", fontSize = 36.sp)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "还没有工厂",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "购买工厂开始加工产品吧！",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
                     }
-                } else {
-                    LazyColumn {
-                        items(queues) { queue ->
-                            val recipe = FactoryConfigs.RECIPES.firstOrNull { it.recipeId == queue.recipeId }
-                            val now = System.currentTimeMillis()
-                            val totalTime = queue.finishTime - queue.startTime
-                            val progress = ((now - queue.startTime).toFloat() / totalTime).coerceIn(0f, 1f)
-                            val isDone = progress >= 1f
+                }
+            } else {
+                queues.forEach { queue ->
+                    val recipe = FactoryConfigs.RECIPES.firstOrNull { it.recipeId == queue.recipeId }
+                    val now = System.currentTimeMillis()
+                    val totalTime = queue.finishTime - queue.startTime
+                    val progress = ((now - queue.startTime).toFloat() / totalTime).coerceIn(0f, 1f)
+                    val isDone = progress >= 1f
 
-                            Surface(
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = if (isDone) 2.dp else 1.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isDone) FarmGold.copy(alpha = 0.5f) else Color(0x20000000)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                color = if (isDone) Color(0xFFFFFDE7) else Color.White,
-                                shape = RoundedCornerShape(14.dp),
-                                shadowElevation = if (isDone) 3.dp else 1.dp,
-                                border = androidx.compose.foundation.BorderStroke(
-                                    width = if (isDone) 1.5.dp else 0.5.dp,
-                                    color = if (isDone) FarmGold else Color(0x20000000)
-                                )
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(FarmRadiusSmall))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(Color(0xFFE1F5FE), Color(0xFF81D4FA))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(14.dp).fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Text(recipe?.icon ?: "📦", fontSize = 22.sp)
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    recipe?.name ?: "生产中",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = FarmText
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(Color(0xFFE0E0E0))
                                 ) {
-                                    Text(recipe?.icon ?: "📦", fontSize = 28.sp)
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            recipe?.name ?: "生产中",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
-                                        )
-                                        Spacer(Modifier.height(6.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(5.dp)
-                                                .clip(RoundedCornerShape(2.dp))
-                                                .background(Color(0xFFF0F0F0))
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxHeight()
-                                                    .fillMaxWidth(progress)
-                                                    .clip(RoundedCornerShape(2.dp))
-                                                    .background(FarmGold)
-                                            )
-                                        }
-                                        Spacer(Modifier.height(4.dp))
-                                        Text(
-                                            if (isDone) "✅ 已完成" else "${(progress * 100).toInt()}%",
-                                            fontSize = 11.sp,
-                                            color = if (isDone) FarmGold else FarmTextMuted,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    if (isDone) {
-                                        AnimatedButton(
-                                            onClick = {
-                                                coroutineScope.launch { engine.collectProduction(queue.queueId) }
-                                            }
-                                        ) {
-                                            Text("收获", fontSize = 11.sp)
-                                        }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(progress)
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(if (isDone) FarmGold else FarmBlue)
+                                    )
+                                }
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    if (isDone) "✅ 已完成" else "${(progress * 100).toInt()}%",
+                                    fontSize = 9.sp,
+                                    color = if (isDone) FarmGold else FarmTextMuted,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            if (isDone) {
+                                Surface(
+                                    onClick = {
+                                        coroutineScope.launch { engine.collectProduction(queue.queueId) }
+                                    },
+                                    modifier = Modifier
+                                        .height(44.dp)
+                                        .width(54.dp),
+                                    color = Color.Transparent,
+                                    shape = RoundedCornerShape(FarmRadiusSmall),
+                                    shadowElevation = 2.dp
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(GradientGold),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("收获", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }

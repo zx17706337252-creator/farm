@@ -6,11 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,10 +21,24 @@ import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
 
-/**
- * 宠物庄园界面
- */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun qualityColor(quality: Int): Color = when (quality) {
+    0 -> Color(0xFF9E9E9E)
+    1 -> Color(0xFF4CAF50)
+    2 -> Color(0xFF2196F3)
+    3 -> Color(0xFF9C27B0)
+    4 -> Color(0xFFFF9800)
+    else -> Color(0xFFE53935)
+}
+
+private fun qualityText(quality: Int): String = when (quality) {
+    0 -> "普通"
+    1 -> "良好"
+    2 -> "精良"
+    3 -> "稀有"
+    4 -> "史诗"
+    else -> "传说"
+}
+
 @Composable
 fun PetScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -50,148 +63,204 @@ fun PetScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
         Weather.METEOR -> "☄️"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopStatusBar(
-                gold = player?.gold ?: 0L,
-                level = player?.level ?: 1,
-                collectionScore = player?.collectionScore ?: 0,
-                season = seasonText,
-                weather = weatherEmoji,
-                onBack = onBack,
-                title = "🐕 宠物庄园"
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFFCE4EC),
+                    Color(0xFFF8BBD0),
+                    Color(0xFFE1F5FE),
+                    Color(0xFFB2DFDB)
+                )
             )
+        )
+    ) {
+        CompactTopBar(
+            title = "🐕 宠物庄园",
+            gold = player?.gold ?: 0L,
+            level = player?.level ?: 1,
+            season = seasonText,
+            weather = weatherEmoji,
+            onBack = onBack
+        )
 
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            GradientCard(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+                gradient = GradientMint,
+                shape = RoundedCornerShape(FarmRadiusMedium)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🐕", fontSize = 28.sp)
+                    Text("🐕", fontSize = 22.sp)
                     Spacer(Modifier.width(8.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "宠物庄园",
+                            text = "宠物庄园",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
+                            fontSize = 14.sp,
                             color = FarmBrown
                         )
                         Text(
-                            "${pets.size} 只宠物",
-                            fontSize = 12.sp,
-                            color = FarmTextMuted
+                            text = "${pets.size} 只宠物",
+                            fontSize = 10.sp,
+                            color = FarmBrown.copy(alpha = 0.8f)
+                        )
+                    }
+                    Text(
+                        text = "Lv.${player?.level ?: 1}",
+                        fontSize = 11.sp,
+                        color = FarmBrown,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            if (pets.isEmpty()) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    gradient = GradientMint,
+                    shape = RoundedCornerShape(FarmRadiusMedium)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text("🐾", fontSize = 36.sp)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "还没有宠物",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = FarmBrown
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "去商店领养你的第一只宠物吧！",
+                            fontSize = 11.sp,
+                            color = FarmBrown.copy(alpha = 0.8f)
                         )
                     }
                 }
-
-                Spacer(Modifier.height(12.dp))
-
-                if (pets.isEmpty()) {
-                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
+            } else {
+                pets.forEach { pet ->
+                    val cfg = PetConfigs.getById(pet.petId)
+                    val qColor = qualityColor(pet.quality)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = 2.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            qColor.copy(alpha = 0.3f)
+                        )
+                    ) {
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth().padding(20.dp)
-                        ) {
-                            Text("🐾", fontSize = 48.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "还没有宠物",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = FarmBrown
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "去商店领养你的第一只宠物吧！",
-                                fontSize = 13.sp,
-                                color = FarmTextMuted
-                            )
-                        }
-                    }
-                } else {
-                    pets.forEach { pet ->
-                        val cfg = PetConfigs.getById(pet.petId)
-                        val qColor = qualityColor(pet.quality)
-                        PremiumCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                                .padding(10.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(FarmRadiusSmall))
+                                        .background(
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    qColor.copy(alpha = 0.15f),
+                                                    qColor.copy(alpha = 0.3f)
+                                                )
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(qColor.copy(alpha = 0.1f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(cfg?.icon ?: "🐕", fontSize = 28.sp)
-                                    }
-                                    Spacer(Modifier.width(10.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            cfg?.name ?: "未知宠物",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp
-                                        )
-                                        Text(
-                                            "等级 ${pet.level} · 友好度 ${pet.friendship}",
-                                            fontSize = 11.sp,
-                                            color = FarmTextMuted
-                                        )
-                                        Text(
-                                            "状态: ${if (pet.isActive) "工作中" else "休息中"} · ${cfg?.category ?: "普通"}",
-                                            fontSize = 11.sp,
-                                            color = FarmTextMuted
-                                        )
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Surface(
-                                            color = qColor.copy(alpha = 0.15f),
-                                            shape = RoundedCornerShape(4.dp)
-                                        ) {
-                                            Text(
-                                                " ${qualityText(pet.quality)} ",
-                                                fontSize = 10.sp,
-                                                color = qColor,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                        Spacer(Modifier.height(6.dp))
-                                        AnimatedButton(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    engine.dispatchPetExplore(context, pet.instanceId, 15)
-                                                }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = FarmGrassGreen,
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("探险", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
+                                    Text(cfg?.icon ?: "🐕", fontSize = 22.sp)
                                 }
-                                if (cfg?.description?.isNotEmpty() == true) {
-                                    Spacer(Modifier.height(6.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        cfg.description,
-                                        fontSize = 11.sp,
+                                        cfg?.name ?: "未知宠物",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = FarmText
+                                    )
+                                    Text(
+                                        "等级 ${pet.level} · 友好度 ${pet.friendship}",
+                                        fontSize = 10.sp,
+                                        color = FarmTextMuted
+                                    )
+                                    Text(
+                                        "状态: ${if (pet.isActive) "工作中" else "休息中"} · ${cfg?.category ?: "普通"}",
+                                        fontSize = 10.sp,
                                         color = FarmTextMuted
                                     )
                                 }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Surface(
+                                        color = qColor,
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            " ${qualityText(pet.quality)} ",
+                                            fontSize = 9.sp,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    Surface(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                engine.dispatchPetExplore(context, pet.instanceId, 15)
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .height(32.dp)
+                                            .width(54.dp),
+                                        color = Color.Transparent,
+                                        shape = RoundedCornerShape(FarmRadiusSmall),
+                                        shadowElevation = 1.dp
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(GradientForest),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("探险", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                            if (cfg?.description?.isNotEmpty() == true) {
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    cfg.description,
+                                    fontSize = 10.sp,
+                                    color = FarmTextMuted
+                                )
                             }
                         }
                     }

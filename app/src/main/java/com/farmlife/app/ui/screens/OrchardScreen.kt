@@ -2,16 +2,13 @@ package com.farmlife.app.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,10 +19,15 @@ import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
 
-/**
- * 果园界面 - 精美版本
- */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun qualityColor(quality: Int): Color = when (quality) {
+    0 -> Color(0xFF9E9E9E)
+    1 -> Color(0xFF4CAF50)
+    2 -> Color(0xFF2196F3)
+    3 -> Color(0xFF9C27B0)
+    4 -> Color(0xFFFF9800)
+    else -> Color(0xFFE53935)
+}
+
 @Composable
 fun OrchardScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
@@ -49,138 +51,194 @@ fun OrchardScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
         Weather.METEOR -> "☄️"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopStatusBar(
-                gold = player?.gold ?: 0L,
-                level = player?.level ?: 1,
-                collectionScore = player?.collectionScore ?: 0,
-                season = seasonText,
-                weather = weatherEmoji,
-                onBack = onBack,
-                title = "🍎 果园"
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFFFE0B2),
+                    Color(0xFFFFCC80),
+                    Color(0xFFFFA726),
+                    Color(0xFFFB8C00)
+                )
             )
+        )
+    ) {
+        CompactTopBar(
+            title = "🍎 果园",
+            gold = player?.gold ?: 0L,
+            level = player?.level ?: 1,
+            season = seasonText,
+            weather = weatherEmoji,
+            onBack = onBack
+        )
 
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            GradientCard(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+                gradient = GradientSunset,
+                shape = RoundedCornerShape(FarmRadiusMedium)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🍎", fontSize = 28.sp)
+                    Text("🍎", fontSize = 22.sp)
                     Spacer(Modifier.width(8.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "果园",
+                            text = "果园",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = FarmPink
+                            fontSize = 14.sp,
+                            color = Color.White
                         )
                         Text(
-                            "${trees.size} 棵果树",
-                            fontSize = 12.sp,
-                            color = FarmTextMuted
+                            text = "${trees.size} 棵果树",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                    Text(
+                        text = "Lv.${player?.level ?: 1}",
+                        fontSize = 11.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            if (trees.isEmpty()) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    gradient = GradientSunset,
+                    shape = RoundedCornerShape(FarmRadiusMedium)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text("🌳", fontSize = 36.sp)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "还没有果树",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "种植果树开始收获果实吧！",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.9f)
                         )
                     }
                 }
-
-                Spacer(Modifier.height(12.dp))
-
-                if (trees.isEmpty()) {
-                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth().padding(20.dp)
-                        ) {
-                            Text("🌳", fontSize = 48.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "还没有果树",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = FarmBrown
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "种植果树开始收获果实吧！",
-                                fontSize = 13.sp,
-                                color = FarmTextMuted
-                            )
-                        }
+            } else {
+                trees.forEach { tree ->
+                    val now = System.currentTimeMillis()
+                    val total = tree.nextHarvestTime - tree.plantedTime
+                    val progress = if (total > 0 && now < tree.nextHarvestTime) {
+                        ((now - tree.plantedTime).toFloat() / total).coerceIn(0f, 1f)
+                    } else {
+                        1f
                     }
-                } else {
-                    LazyColumn {
-                        items(trees) { tree ->
-                            val now = System.currentTimeMillis()
-                            val total = tree.nextHarvestTime - tree.plantedTime
-                            val progress = if (total > 0 && now < tree.nextHarvestTime) {
-                                ((now - tree.plantedTime).toFloat() / total).coerceIn(0f, 1f)
-                            } else {
-                                1f
-                            }
-                            val isReady = progress >= 1f
+                    val isReady = progress >= 1f
+                    val qColor = qualityColor(tree.quality)
 
-                            Surface(
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(FarmRadiusMedium),
+                        shadowElevation = if (isReady) 2.dp else 1.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isReady) FarmGold.copy(alpha = 0.5f) else qColor.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 3.dp),
-                                color = if (isReady) Color(0xFFFFFDE7) else Color.White,
-                                shape = RoundedCornerShape(12.dp),
-                                shadowElevation = if (isReady) 3.dp else 1.dp,
-                                border = androidx.compose.foundation.BorderStroke(
-                                    if (isReady) 1.5.dp else 0.5.dp,
-                                    if (isReady) FarmGold else Color(0x15000000)
-                                )
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(FarmRadiusSmall))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(Color(0xFFFFE0B2), Color(0xFFFFA726))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Row(
+                                Text("🍎", fontSize = 22.sp)
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "果树 #${tree.treeId}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = FarmText
+                                )
+                                Spacer(Modifier.height(3.dp))
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(Color(0xFFE0E0E0))
                                 ) {
-                                    Text("🍎", fontSize = 24.sp)
-                                    Spacer(Modifier.width(10.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            "果树 #${tree.treeId}",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp
-                                        )
-                                        Spacer(Modifier.height(4.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(4.dp)
-                                                .clip(RoundedCornerShape(2.dp))
-                                                .background(Color(0xFFF0F0F0))
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxHeight()
-                                                    .fillMaxWidth(progress)
-                                                    .clip(RoundedCornerShape(2.dp))
-                                                    .background(FarmGold)
-                                            )
-                                        }
-                                        Spacer(Modifier.height(2.dp))
-                                        Text(
-                                            if (isReady) "✅ 已成熟" else "${(progress * 100).toInt()}%",
-                                            fontSize = 10.sp,
-                                            color = if (isReady) FarmGold else FarmTextMuted
-                                        )
-                                    }
-                                    if (isReady) {
-                                        AnimatedButton(
-                                            onClick = {
-                                                coroutineScope.launch { engine.harvestTree(tree.treeId) }
-                                            }
-                                        ) {
-                                            Text("收获", fontSize = 11.sp)
-                                        }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(progress)
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(if (isReady) FarmGold else qColor)
+                                    )
+                                }
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    if (isReady) "✅ 已成熟" else "${(progress * 100).toInt()}%",
+                                    fontSize = 9.sp,
+                                    color = if (isReady) FarmGold else FarmTextMuted,
+                                    fontWeight = if (isReady) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                            if (isReady) {
+                                Surface(
+                                    onClick = {
+                                        coroutineScope.launch { engine.harvestTree(tree.treeId) }
+                                    },
+                                    modifier = Modifier
+                                        .height(44.dp)
+                                        .width(54.dp),
+                                    color = Color.Transparent,
+                                    shape = RoundedCornerShape(FarmRadiusSmall),
+                                    shadowElevation = 2.dp
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(GradientGold),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("收获", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
