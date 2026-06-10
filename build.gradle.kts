@@ -1,11 +1,4 @@
-// Root build file for KMM project
-plugins {
-    id("com.android.application") apply false
-    id("com.android.library") apply false
-    id("org.jetbrains.kotlin.android") apply false
-    id("org.jetbrains.kotlin.multiplatform") apply false
-}
-
+// Root build file for FarmLife project
 tasks.register("clean", Delete::class) {
     delete(rootProject.layout.buildDirectory)
 }
