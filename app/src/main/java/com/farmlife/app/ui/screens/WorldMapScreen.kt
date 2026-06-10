@@ -321,7 +321,7 @@ fun WorldMapScreen(
  * 模块卡片组件
  */
 @Composable
-fun ModuleCard(
+fun ColumnScope.ModuleCard(
     icon: String,
     label: String,
     color: Color,
@@ -337,25 +337,21 @@ fun ModuleCard(
         label = "scale"
     )
 
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .weight(1f)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(enabled = isUnlocked) { onClick() }
+            .clip(RoundedCornerShape(16.dp)),
+        color = if (isUnlocked) Color.White else Color(0xFFE0E0E0),
+        shape = RoundedCornerShape(16.dp),
+        shadowElevation = if (isActive) 8.dp else 3.dp,
+        border = BorderStroke(2.dp, if (isUnlocked) color else Color(0xFFBDBDBD))
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .clickable(enabled = isUnlocked) { onClick() }
-                .clip(RoundedCornerShape(16.dp)),
-            color = if (isUnlocked) Color.White else Color(0xFFE0E0E0),
-            shape = RoundedCornerShape(16.dp),
-            shadowElevation = if (isActive) 8.dp else 3.dp,
-            border = BorderStroke(2.dp, if (isUnlocked) color else Color(0xFFBDBDBD))
-        ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -423,7 +419,6 @@ fun ModuleCard(
                     Text("🔒", fontSize = 12.sp)
                 }
             }
-        }
         }
     }
 }
