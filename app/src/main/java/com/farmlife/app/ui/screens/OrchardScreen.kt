@@ -155,7 +155,7 @@ fun OrchardScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
                         1f
                     }
                     val isReady = progress >= 1f
-                    val qColor = qualityColor(tree.quality)
+                    val qColor = FarmGold
 
                     Surface(
                         modifier = Modifier

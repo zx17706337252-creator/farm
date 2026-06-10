@@ -344,9 +344,9 @@ fun PondCard(
                     val cfg = FishConfigs.getById(fishItem.configId)
                     val now = TimeSystem.currentTimeMs()
                     val isReady = now >= fishItem.finishTime
-                    val total = fishItem.finishTime - fishItem.plantTime
+                    val total = fishItem.finishTime - fishItem.placedTime
                     val progress = if (total > 0 && !isReady) {
-                        ((now - fishItem.plantTime).toFloat() / total).coerceIn(0f, 1f)
+                        ((now - fishItem.placedTime).toFloat() / total).coerceIn(0f, 1f)
                     } else {
                         1f
                     }
