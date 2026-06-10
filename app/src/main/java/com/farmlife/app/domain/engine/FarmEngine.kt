@@ -8,6 +8,9 @@ import com.farmlife.app.domain.repository.FarmLifeRepository
 import com.farmlife.app.system.TaskScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,9 +20,10 @@ import kotlinx.coroutines.launch
  * FarmEngine - 农场游戏核心引擎
  * 处理所有游戏逻辑：种植、收获、动物生产、宠物工作、加工、订单等
  */
-class FarmEngine(val repository: FarmLifeRepository) {
+class FarmEngine(private val repository: FarmLifeRepository) {
 
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val supervisorJob = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.Default + supervisorJob)
 
     // ===== 游戏状态 Flow =====
     private val _player = MutableStateFlow<PlayerEntity?>(null)
@@ -88,6 +92,7 @@ class FarmEngine(val repository: FarmLifeRepository) {
     private var playerTotalExp: Long = 0
     private var gameStartTime: Long = System.currentTimeMillis()
     private var previousLevel = 0
+    private var toastJob: Job? = null
 
     // ===== 初始化 =====
     suspend fun initialize() {
@@ -144,9 +149,10 @@ class FarmEngine(val repository: FarmLifeRepository) {
     }
 
     private fun showToast(msg: String) {
+        toastJob?.cancel()
         _toast.value = msg
-        scope.launch {
-            kotlinx.coroutines.delay(2000)
+        toastJob = scope.launch {
+            delay(2000)
             _toast.value = null
         }
     }
@@ -192,9 +198,9 @@ class FarmEngine(val repository: FarmLifeRepository) {
             finishTime = finishTime,
             quality = quality
         )
-        repository.insertCrop(crop)
-
         repository.updatePlayer(p.copy(gold = p.gold - cropConfig.sellPrice * 2L))
+
+        repository.insertCrop(crop)
 
         val stats = repository.getStats()
         repository.updateStats(stats.copy(totalPlant = stats.totalPlant + 1))
@@ -347,8 +353,8 @@ class FarmEngine(val repository: FarmLifeRepository) {
             lastProduceTime = TimeSystem.currentTimeMs(),
             region = "LIVESTOCK"
         )
-        repository.insertAnimal(animal)
         repository.updatePlayer(p.copy(gold = p.gold - cfg.purchasePrice))
+        repository.insertAnimal(animal)
         repository.addLog("BUY", "购买了${cfg.icon}${cfg.name}")
         updateCollection("ANIMAL", animalId, animal.quality, cfg.name)
         refreshAll()
@@ -435,8 +441,8 @@ class FarmEngine(val repository: FarmLifeRepository) {
             isActive = true,
             region = "PET_ESTATE"
         )
-        repository.insertPet(pet)
         repository.updatePlayer(p.copy(gold = p.gold - cfg.purchasePrice))
+        repository.insertPet(pet)
         repository.addLog("PET", "获得新宠物：${cfg.icon}${cfg.name}")
         updateCollection("PET", petId, pet.quality, cfg.name)
         val stats = repository.getStats()
@@ -490,6 +496,17 @@ class FarmEngine(val repository: FarmLifeRepository) {
         }
     }
 
+    // ===== 宠物探险完成奖励（供 WorkManager 调用）=====
+    suspend fun completePetExploreReward(petInstanceId: Long, gold: Long) {
+        val player = _player.value ?: return
+        repository.updatePlayer(player.copy(gold = player.gold + gold))
+        val pet = _pets.value.firstOrNull { it.instanceId == petInstanceId }
+        pet?.let {
+            repository.updatePet(it.copy(currentMission = null))
+        }
+        refreshAll()
+    }
+
     suspend fun dispatchPetExplore(context: Context, petInstanceId: Long, minutes: Int) {
         val pet = _pets.value.firstOrNull { it.instanceId == petInstanceId } ?: return
 
@@ -534,8 +551,8 @@ class FarmEngine(val repository: FarmLifeRepository) {
             queueSize = 1,
             region = "PROCESSING"
         )
-        repository.insertFactory(factory)
         repository.updatePlayer(p.copy(gold = p.gold - cfg.purchasePrice))
+        repository.insertFactory(factory)
         repository.addLog("BUILD", "建造了${cfg.icon}${cfg.name}")
         refreshAll()
         showToast("建造了 ${cfg.name}")
@@ -682,8 +699,8 @@ class FarmEngine(val repository: FarmLifeRepository) {
                 newLands.add(LandInstanceEntity(x = x, y = y, region = "FARMLAND", unlocked = true))
             }
         }
-        repository.insertAllLands(newLands)
         repository.updatePlayer(p.copy(gold = p.gold - cost))
+        repository.insertAllLands(newLands)
         repository.addLog("EXPAND", "扩充了 ${newLands.size} 块土地")
         refreshAll()
         showToast("农场扩建完成！")
@@ -706,8 +723,8 @@ class FarmEngine(val repository: FarmLifeRepository) {
             level = 1,
             exp = 0
         )
-        repository.insertTree(tree)
         repository.updatePlayer(p.copy(gold = p.gold - cfg.sellPrice))
+        repository.insertTree(tree)
         repository.addLog("PLANT", "种植了${cfg.icon}${cfg.name}")
         refreshAll()
         showToast("种植了 ${cfg.name}")
@@ -763,20 +780,20 @@ class FarmEngine(val repository: FarmLifeRepository) {
         if (p.gold < 10000) { showToast("金币不足，需要 10000"); return }
 
         val pond = _ponds.value.firstOrNull { it.pondId == pondId } ?: return
-        repository.updatePond(pond.copy(unlocked = true))
         repository.updatePlayer(p.copy(gold = p.gold - 10000))
+        repository.updatePond(pond.copy(unlocked = true))
         repository.addLog("UNLOCK", "解锁了鱼塘")
         refreshAll()
         showToast("鱼塘解锁成功！")
     }
 
-    suspend fun addFish(pondId: Int, fishId: Int) {
+    suspend fun addFish(pondId: Long, fishId: Int) {
         val cfg = repository.getFishConfig(fishId) ?: run { showToast("鱼类不存在"); return }
         val p = _player.value ?: return
         if (p.level < cfg.unlockLevel) { showToast("需要等级 ${cfg.unlockLevel}"); return }
         if (p.gold < cfg.sellPrice) { showToast("金币不足"); return }
 
-        val pond = _ponds.value.firstOrNull { it.pondId == pondId.toLong() && it.unlocked } ?: run {
+        val pond = _ponds.value.firstOrNull { it.pondId == pondId && it.unlocked } ?: run {
             showToast("池塘未解锁"); return
         }
 
@@ -787,8 +804,8 @@ class FarmEngine(val repository: FarmLifeRepository) {
             finishTime = TimeSystem.currentTimeMs() + cfg.growTimeMinutes * 60L * 1000L,
             quality = QualitySystem.rollQuality().ordinal
         )
-        repository.insertFish(fish)
         repository.updatePlayer(p.copy(gold = p.gold - cfg.sellPrice))
+        repository.insertFish(fish)
         refreshAll()
         showToast("放入了 ${cfg.name}")
     }
@@ -838,8 +855,8 @@ class FarmEngine(val repository: FarmLifeRepository) {
             level = 1,
             isActive = true
         )
-        repository.insertPetFacility(facility)
         repository.updatePlayer(p.copy(gold = p.gold - cfg.buildCost))
+        repository.insertPetFacility(facility)
         repository.addLog("BUILD", "建造了${cfg.icon}${cfg.name}")
         refreshAll()
         showToast("建造了 ${cfg.name}")

@@ -4,103 +4,204 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.farmlife.app.config.AnimalConfigs
-import com.farmlife.app.config.CropConfigs
-import com.farmlife.app.config.FactoryConfigs
+import com.farmlife.app.data.model.Season
+import com.farmlife.app.data.model.Weather
 import com.farmlife.app.domain.engine.FarmEngine
-import com.farmlife.app.domain.logic.QualitySystem
+import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
 
 /**
- * 仓库屏幕 - 查看库存、出售
+ * 仓库界面 - 精美版本
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InventoryScreen(engine: FarmEngine) {
+fun InventoryScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
     val inventory by engine.inventory.collectAsState()
+    val player by engine.player.collectAsState()
+    val season by engine.season.collectAsState()
+    val weather by engine.weather.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("📦 仓库 (${inventory.sumOf { it.quantity }}件)",
-                style = MaterialTheme.typography.titleLarge)
-            Button(onClick = { coroutineScope.launch { engine.sellAllInventory() } }) {
-                Text("全部出售")
-            }
-        }
+    val seasonText = when (season) {
+        Season.SPRING -> "🌸 春天"
+        Season.SUMMER -> "☀️ 夏天"
+        Season.AUTUMN -> "🍂 秋天"
+        Season.WINTER -> "❄️ 冬天"
+    }
+    val weatherEmoji = when (weather) {
+        Weather.SUNNY -> "☀️"
+        Weather.CLOUDY -> "☁️"
+        Weather.RAINY -> "🌧️"
+        Weather.SNOWY -> "❄️"
+        Weather.RAINBOW -> "🌈"
+        Weather.METEOR -> "☄️"
+    }
 
-        if (inventory.isEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("仓库空空如也，快去种点什么吧！", modifier = Modifier.padding(16.dp))
-            }
-        } else {
-            LazyColumn {
-                items(inventory) { item ->
-                    val configName = when (item.itemType) {
-                        "CROP" -> CropConfigs.getById(item.configId)?.name ?: "作物"
-                        "ANIMAL" -> AnimalConfigs.getById(item.configId)?.productName ?: "动物产品"
-                        "PROCESSED" -> FactoryConfigs.RECIPES.firstOrNull { it.recipeId == item.configId }?.name ?: "加工品"
-                        else -> "物品"
-                    }
-                    val configIcon = when (item.itemType) {
-                        "CROP" -> CropConfigs.getById(item.configId)?.icon ?: "🌾"
-                        "ANIMAL" -> AnimalConfigs.getById(item.configId)?.icon ?: "🥚"
-                        else -> "📦"
-                    }
-                    val sellPrice = when (item.itemType) {
-                        "CROP" -> CropConfigs.getById(item.configId)?.sellPrice ?: 0
-                        "ANIMAL" -> AnimalConfigs.getById(item.configId)?.productSellPrice ?: 0
-                        "PROCESSED" -> FactoryConfigs.RECIPES.firstOrNull { it.recipeId == item.configId }?.outputSellPrice ?: 0
-                        else -> 0
-                    }
-                    val finalPrice = (sellPrice * QualitySystem.qualityMultiplier(item.quality)).toLong()
+    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopStatusBar(
+                gold = player?.gold ?: 0L,
+                level = player?.level ?: 1,
+                collectionScore = player?.collectionScore ?: 0,
+                season = seasonText,
+                weather = weatherEmoji,
+                onBack = onBack,
+                title = "📦 仓库"
+            )
 
-                    val qualityColor = when (item.quality) {
-                        1 -> Color(0xFF4CAF50)
-                        2 -> Color(0xFF2196F3)
-                        3 -> Color(0xFF9C27B0)
-                        4 -> Color(0xFFFFC107)
-                        5 -> Color(0xFFFF6EC7)
-                        else -> Color(0xFF9E9E9E)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    Text("📦", fontSize = 28.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "仓库",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = FarmBrown
+                        )
+                        Text(
+                            "${inventory.size} 件物品",
+                            fontSize = 12.sp,
+                            color = FarmTextMuted
+                        )
                     }
-                    val qualityName = when (item.quality) {
-                        1 -> "优良"
-                        2 -> "稀有"
-                        3 -> "史诗"
-                        4 -> "传说"
-                        5 -> "神话"
-                        else -> "普通"
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Spacer(Modifier.weight(1f))
+                    AnimatedButton(
+                        onClick = { coroutineScope.launch { engine.sellAllInventory() } },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = FarmGold,
+                            contentColor = Color(0xFF3A2A00)
+                        )
                     ) {
-                        Text(configIcon, fontSize = 24.sp, modifier = Modifier.padding(end = 8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(configName, fontWeight = FontWeight.Bold)
-                            Text("品质: $qualityName | 数量: ${item.quantity}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = qualityColor)
-                        }
-                        Text("💰$finalPrice/件", modifier = Modifier.padding(horizontal = 8.dp))
-                        Button(onClick = {
-                            coroutineScope.launch { engine.sellInventoryItem(item.itemId, item.quantity) }
-                        }) {
-                            Text("出售")
+                        Text("全部卖出", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                if (inventory.isEmpty()) {
+                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth().padding(20.dp)
+                        ) {
+                            Text("📦", fontSize = 48.sp)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "仓库是空的",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = FarmBrown
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "收获作物和动物产品，增加仓库！",
+                                fontSize = 13.sp,
+                                color = FarmTextMuted
+                            )
                         }
                     }
-                    Divider()
+                } else {
+                    inventory.forEach { item ->
+                        val qColor = qualityColor(item.quality)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp),
+                            color = Color.White,
+                            shape = RoundedCornerShape(12.dp),
+                            shadowElevation = 1.dp,
+                            border = androidx.compose.foundation.BorderStroke(
+                                0.5.dp,
+                                qColor.copy(alpha = 0.2f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(qColor.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val icon = when (item.itemType) {
+                                        "CROP" -> "🌱"
+                                        "ANIMAL" -> "🥚"
+                                        "PROCESSED" -> "📦"
+                                        "TREE" -> "🍎"
+                                        "FISH" -> "🐟"
+                                        else -> "📦"
+                                    }
+                                    Text(icon, fontSize = 20.sp)
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "${item.itemType} #${item.configId}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                    Text(
+                                        "数量: ${item.quantity}",
+                                        fontSize = 11.sp,
+                                        color = FarmTextMuted
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Surface(
+                                        color = qColor.copy(alpha = 0.15f),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            " ${qualityText(item.quality)} ",
+                                            fontSize = 10.sp,
+                                            color = qColor,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    AnimatedButton(
+                                        onClick = {
+                                            coroutineScope.launch { engine.sellInventoryItem(item.itemId, 1) }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = FarmGold,
+                                            contentColor = Color(0xFF3A2A00)
+                                        )
+                                    ) {
+                                        Text("卖出", fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

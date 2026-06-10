@@ -34,18 +34,9 @@ class PetExploreWorker(
         val rewardGold = (Math.random() * 2000 + 500).toLong()
         val rewardExp = (Math.random() * 100 + 20).toInt()
 
-        // 更新玩家数据
+        // 更新玩家数据和宠物状态
         withContext(Dispatchers.IO) {
-            val player = engine.player.value ?: return@withContext
-            engine.repository.updatePlayer(
-                player.copy(gold = player.gold + rewardGold)
-            )
-
-            // 更新宠物状态
-            val pet = engine.pets.value.firstOrNull { it.instanceId == petInstanceId }
-            pet?.let {
-                engine.repository.updatePet(it.copy(currentMission = null))
-            }
+            engine.completePetExploreReward(petInstanceId, rewardGold)
         }
 
         // 发送通知

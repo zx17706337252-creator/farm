@@ -29,13 +29,13 @@ object TutorialSystem {
     }
 
     fun getNextStep(currentStep: Int, playerLevel: Int): Step? {
-        val steps = Step.values().filter { it.id > currentStep && it.isUnlocked(playerLevel) }
+        val steps = values().filter { it.id > currentStep && it.isUnlocked(playerLevel) }
         return steps.minByOrNull { it.id }
     }
 
-    fun getAllSteps(): List<Step> = Step.values().toList()
+    fun getAllSteps(): List<Step> = values().toList()
 
-    fun getStepById(id: Int): Step? = Step.values().firstOrNull { it.id == id }
+    fun getStepById(id: Int): Step? = values().firstOrNull { it.id == id }
 
     fun isStepCompleted(completedSteps: String, stepId: Int): Boolean {
         return completedSteps.contains(",$stepId,")

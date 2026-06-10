@@ -16,13 +16,14 @@ enum class Quality(val displayName: String, val multiplier: Double, val hexColor
         /** 按照基础概率抽取品质 */
         fun roll(baseQualityBonus: Double = 0.0): Quality {
             val roll = Math.random()
-            val adjusted = (roll - baseQualityBonus).coerceIn(0.0, 0.999)
+            val adjusted = (roll - baseQualityBonus).coerceIn(0.0, 0.99999)
             return when {
                 adjusted < 0.85 -> COMMON
                 adjusted < 0.95 -> GOOD
                 adjusted < 0.99 -> RARE
                 adjusted < 0.999 -> EPIC
-                else -> LEGENDARY
+                adjusted < 0.9999 -> LEGENDARY
+                else -> MYTHIC
             }
         }
     }

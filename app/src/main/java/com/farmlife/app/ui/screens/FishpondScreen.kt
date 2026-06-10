@@ -9,58 +9,100 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.farmlife.app.config.FishConfigs
+import com.farmlife.app.data.model.Season
+import com.farmlife.app.data.model.Weather
 import com.farmlife.app.domain.engine.FarmEngine
-import kotlinx.coroutines.launch
+import com.farmlife.app.domain.logic.TimeSystem
+import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * 鱼塘屏幕
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FishpondScreen(engine: FarmEngine) {
-    val scope = rememberCoroutineScope()
+fun FishpondScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
+    val coroutineScope = rememberCoroutineScope()
     val ponds by engine.ponds.collectAsState()
-    val fish by engine.fish.collectAsState()
+    val fishList by engine.fish.collectAsState()
     val player by engine.player.collectAsState()
+    val season by engine.season.collectAsState()
+    val weather by engine.weather.collectAsState()
     var showAddFishDialog by remember { mutableStateOf(false) }
-    var selectedPondId by remember { mutableStateOf<Int>(0) }
+    var selectedPondId by remember { mutableStateOf<Long>(0) }
 
     produceState(initialValue = 0L) {
-        while (true) {
+        while (isActive) {
             delay(1000)
-            value = System.currentTimeMillis()
+            value = TimeSystem.currentTimeMs()
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-        Text("🐟 鱼塘", style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(vertical = 8.dp))
+    val seasonText = when (season) {
+        Season.SPRING -> "🌸 春天"
+        Season.SUMMER -> "☀️ 夏天"
+        Season.AUTUMN -> "🍂 秋天"
+        Season.WINTER -> "❄️ 冬天"
+    }
 
-        if (player?.level ?: 0 < 40) {
-            Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("需要等级 40 才能解锁鱼塘", modifier = Modifier.padding(16.dp))
+    val weatherIcon = when (weather) {
+        Weather.SUNNY -> "☀️"
+        Weather.CLOUDY -> "☁️"
+        Weather.RAINY -> "🌧️"
+        Weather.SNOWY -> "❄️"
+        Weather.RAINBOW -> "🌈"
+        Weather.METEOR -> "✨"
+        else -> "🌤️"
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 顶部状态条
+            player?.let { p ->
+                TopStatusBar(
+                    gold = p.gold,
+                    level = p.level,
+                    collectionScore = p.collectionScore,
+                    season = seasonText,
+                    weather = weatherIcon,
+                    onBack = onBack,
+                    title = "🐟 鱼塘"
+                )
             }
-        } else {
-            LazyColumn {
-                items(ponds) { pond ->
-                    PondCard(
-                        pond = pond,
-                        fishInPond = fish.filter { it.pondId == pond.pondId.toInt() },
-                        engine = engine,
-                        onUnlock = {
-                            scope.launch { engine.unlockPond(pond.pondId) }
-                        },
-                        onAddFish = {
-                            selectedPondId = pond.pondId.toInt()
-                            showAddFishDialog = true
-                        }
-                    )
+
+            // 内容区
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(8.dp)
+            ) {
+                if ((player?.level ?: 0) < 40) {
+                    PremiumCard(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text("需要等级 40 才能解锁鱼塘", fontSize = 14.sp)
+                    }
+                } else {
+                    ponds.forEach { pond ->
+                        PondCard(
+                            pond = pond,
+                            fishInPond = fishList.filter { it.pondId == pond.pondId },
+                            engine = engine,
+                            onUnlock = {
+                                coroutineScope.launch { engine.unlockPond(pond.pondId) }
+                            },
+                            onAddFish = {
+                                selectedPondId = pond.pondId
+                                showAddFishDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -69,40 +111,46 @@ fun FishpondScreen(engine: FarmEngine) {
     if (showAddFishDialog) {
         AlertDialog(
             onDismissRequest = { showAddFishDialog = false },
-            title = { Text("选择要放入的鱼") },
+            title = { Text("选择要放入的鱼", fontWeight = FontWeight.Bold, color = FarmBrown) },
             text = {
                 LazyColumn {
-                    items(FishConfigs.ALL) { fish ->
-                        val canBuy = (player?.level ?: 0) >= fish.unlockLevel &&
-                                (player?.gold ?: 0) >= fish.sellPrice
+                    items(FishConfigs.ALL) { fishConfig ->
+                        val canBuy = (player?.level ?: 0) >= fishConfig.unlockLevel &&
+                                (player?.gold ?: 0) >= fishConfig.sellPrice
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (canBuy) Color(0xFFE8F5E9) else Color(0xFFEEEEEE))
                                 .clickable {
                                     if (canBuy) {
-                                        scope.launch {
-                                            engine.addFish(selectedPondId, fish.fishId)
+                                        coroutineScope.launch {
+                                            engine.addFish(selectedPondId, fishConfig.fishId)
                                             showAddFishDialog = false
                                         }
                                     }
-                                },
+                                }
+                                .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(fish.icon, fontSize = 24.sp, modifier = Modifier.padding(end = 8.dp))
+                            Text(fishConfig.icon, fontSize = 24.sp, modifier = Modifier.padding(end = 8.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(fish.name, fontWeight = FontWeight.Bold)
-                                Text("成长: ${fish.growTimeMinutes}分钟 | 售价:💰${fish.sellPrice}",
-                                    style = MaterialTheme.typography.bodySmall)
+                                Text(fishConfig.name, fontWeight = FontWeight.Bold, color = if (canBuy) FarmText else Color.Gray)
+                                Text("成长: ${fishConfig.growTimeMinutes}分钟 | 售价:💰${fishConfig.sellPrice}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = FarmTextMuted)
                             }
                         }
-                        Divider()
+                        Divider(color = Color(0x20000000))
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showAddFishDialog = false }) { Text("取消") }
-            }
+                TextButton(onClick = { showAddFishDialog = false }) { Text("取消", color = FarmBrown) }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 }
@@ -115,37 +163,44 @@ fun PondCard(
     onUnlock: () -> Unit,
     onAddFish: () -> Unit
 ) {
-    Card(
+    val coroutineScope = rememberCoroutineScope()
+    PremiumCard(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (pond.unlocked) Color(0xFFE3F2FD) else MaterialTheme.colorScheme.surface
-        )
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("🏊 池塘 ${pond.pondId + 1}", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.weight(1f))
-                if (!pond.unlocked) {
-                    Button(onClick = onUnlock) {
-                        Text("解锁 💰10000")
-                    }
-                } else {
-                    Button(onClick = onAddFish) {
-                        Text("放鱼")
-                    }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("🏊 池塘 ${pond.pondId + 1}", fontWeight = FontWeight.Bold, color = FarmBrown)
+            Spacer(Modifier.weight(1f))
+            if (!pond.unlocked) {
+                AnimatedButton(onClick = onUnlock) {
+                    Text("解锁 💰10000", fontSize = 12.sp)
+                }
+            } else {
+                AnimatedButton(
+                    onClick = onAddFish,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0288D1),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("放鱼", fontSize = 12.sp)
                 }
             }
+        }
 
-            if (pond.unlocked && fishInPond.isNotEmpty()) {
-                LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
-                    items(fishInPond) { fish ->
-                        val cfg = FishConfigs.getById(fish.configId)
-                        FishItem(fish = fish, cfg = cfg, engine = engine, fishId = fish.fishId)
-                    }
+        if (pond.unlocked && fishInPond.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            fishInPond.forEach { fishItem ->
+                val cfg = FishConfigs.getById(fishItem.configId)
+                FishItem(fish = fishItem, cfg = cfg, engine = engine) {
+                    coroutineScope.launch { engine.collectFish(fishItem.fishId) }
                 }
-            } else if (pond.unlocked) {
-                Text("池塘里还没有鱼，点击'放鱼'放入鱼苗", style = MaterialTheme.typography.bodySmall)
             }
+        } else if (pond.unlocked) {
+            Spacer(Modifier.height(8.dp))
+            Text("池塘里还没有鱼，点击'放鱼'放入鱼苗",
+                style = MaterialTheme.typography.bodySmall,
+                color = FarmTextMuted)
         }
     }
 }
@@ -155,24 +210,34 @@ fun FishItem(
     fish: com.farmlife.app.data.entity.FishInstanceEntity,
     cfg: com.farmlife.app.config.FishConfig?,
     engine: FarmEngine,
-    fishId: Long
+    onCollect: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-    val now = System.currentTimeMillis()
+    val now = TimeSystem.currentTimeMs()
     val isReady = now >= fish.finishTime
 
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isReady) Color(0xFFFFF8E1) else Color(0xFFE3F2FD))
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(cfg?.icon ?: "🐟", fontSize = 20.sp)
+        Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(cfg?.name ?: "鱼", fontWeight = FontWeight.Bold)
-            Text(if (isReady) "🐠 可收获" else "🐟 生长中", style = MaterialTheme.typography.bodySmall)
+            Text(cfg?.name ?: "鱼", fontWeight = FontWeight.Bold, color = FarmText)
+            Text(if (isReady) "🐠 可收获" else "🐟 生长中",
+                style = MaterialTheme.typography.bodySmall,
+                color = FarmTextMuted)
         }
         if (isReady) {
-            Button(onClick = { scope.launch { engine.collectFish(fishId) } }, modifier = Modifier.size(36.dp), contentPadding = PaddingValues(0.dp)) {
-                Text("收")
+            AnimatedButton(
+                onClick = onCollect,
+                modifier = Modifier.size(40.dp, 32.dp)
+            ) {
+                Text("收", fontSize = 12.sp)
             }
         }
     }

@@ -20,6 +20,7 @@ data class FactoryConfig(
 data class RecipeConfig(
     val recipeId: Int,
     val name: String,
+    val icon: String,
     val factoryId: Int,
     val inputItemType: String,
     val inputConfigId: Int,
@@ -55,21 +56,21 @@ object FactoryConfigs {
 
     val RECIPES: List<RecipeConfig> = listOf(
         // 面粉坊
-        RecipeConfig(1, "面粉", 1, "CROP", 1, 3, 20, 3, 30),
+        RecipeConfig(1, "面粉", "🌾", 1, "CROP", 1, 3, 20, 3, 30),
         // 乳品厂
-        RecipeConfig(11, "奶酪", 2, "ANIMAL", 2, 2, 120, 15, 300),
-        RecipeConfig(12, "黄油", 2, "ANIMAL", 2, 3, 300, 25, 600),
+        RecipeConfig(11, "奶酪", "🧀", 2, "ANIMAL", 2, 2, 120, 15, 300),
+        RecipeConfig(12, "黄油", "🧈", 2, "ANIMAL", 2, 3, 300, 25, 600),
         // 面包坊
-        RecipeConfig(21, "面包", 11, "PROCESSED", 1, 2, 80, 10, 120),
-        RecipeConfig(22, "三明治", 11, "PROCESSED", 1, 4, 250, 30, 300),
+        RecipeConfig(21, "面包", "🍞", 11, "PROCESSED", 1, 2, 80, 10, 120),
+        RecipeConfig(22, "三明治", "🥪", 11, "PROCESSED", 1, 4, 250, 30, 300),
         // 果酱坊
-        RecipeConfig(31, "草莓酱", 12, "CROP", 21, 3, 200, 20, 300),
-        RecipeConfig(32, "蓝莓酱", 12, "CROP", 22, 2, 500, 40, 600),
+        RecipeConfig(31, "草莓酱", "🍯", 12, "CROP", 21, 3, 200, 20, 300),
+        RecipeConfig(32, "蓝莓酱", "🫐", 12, "CROP", 22, 2, 500, 40, 600),
         // 咖啡馆
-        RecipeConfig(41, "咖啡", 14, "CROP", 31, 2, 2500, 80, 1800),
+        RecipeConfig(41, "咖啡", "☕", 14, "CROP", 31, 2, 2500, 80, 1800),
         // 蜂蜜工坊
-        RecipeConfig(51, "蜂蜜糖浆", 24, "ANIMAL", 5, 2, 300, 30, 600),
-        RecipeConfig(52, "蜂蜜蛋糕", 24, "ANIMAL", 5, 3, 800, 60, 1200)
+        RecipeConfig(51, "蜂蜜糖浆", "🍯", 24, "ANIMAL", 5, 2, 300, 30, 600),
+        RecipeConfig(52, "蜂蜜蛋糕", "🍰", 24, "ANIMAL", 5, 3, 800, 60, 1200)
     )
 
     fun getFactoryById(id: Int): FactoryConfig? = ALL.firstOrNull { it.factoryId == id }

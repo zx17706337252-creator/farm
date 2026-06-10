@@ -4,161 +4,211 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.farmlife.app.config.AnimalConfigs
 import com.farmlife.app.config.CropConfigs
-import com.farmlife.app.config.FactoryConfigs
-import com.farmlife.app.config.PetConfigs
+import com.farmlife.app.data.model.Season
+import com.farmlife.app.data.model.Weather
 import com.farmlife.app.domain.engine.FarmEngine
+import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
 
 /**
- * 商店屏幕 - 购买种子、动物、宠物、建筑
+ * 商店界面 - 精美版本
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShopScreen(engine: FarmEngine) {
+fun ShopScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
-    var currentTab by remember { mutableStateOf(0) }
+    val player by engine.player.collectAsState()
+    val season by engine.season.collectAsState()
+    val weather by engine.weather.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-        Text("🏪 商店", style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(vertical = 8.dp))
+    val seasonText = when (season) {
+        Season.SPRING -> "🌸 春天"
+        Season.SUMMER -> "☀️ 夏天"
+        Season.AUTUMN -> "🍂 秋天"
+        Season.WINTER -> "❄️ 冬天"
+    }
+    val weatherEmoji = when (weather) {
+        Weather.SUNNY -> "☀️"
+        Weather.CLOUDY -> "☁️"
+        Weather.RAINY -> "🌧️"
+        Weather.SNOWY -> "❄️"
+        Weather.RAINBOW -> "🌈"
+        Weather.METEOR -> "☄️"
+    }
 
-        // Tab切换
-        TabRow(selectedTabIndex = currentTab) {
-            Tab(selected = currentTab == 0, onClick = { currentTab = 0 }, text = { Text("种子") })
-            Tab(selected = currentTab == 1, onClick = { currentTab = 1 }, text = { Text("动物") })
-            Tab(selected = currentTab == 2, onClick = { currentTab = 2 }, text = { Text("宠物") })
-            Tab(selected = currentTab == 3, onClick = { currentTab = 3 }, text = { Text("建筑") })
-        }
+    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopStatusBar(
+                gold = player?.gold ?: 0L,
+                level = player?.level ?: 1,
+                collectionScore = player?.collectionScore ?: 0,
+                season = seasonText,
+                weather = weatherEmoji,
+                onBack = onBack,
+                title = "🏪 商店"
+            )
 
-        when (currentTab) {
-            0 -> SeedShop(engine)
-            1 -> AnimalShop(engine, onBuy = {
-                coroutineScope.launch { engine.buyAnimal(it) }
-            })
-            2 -> PetShop(engine, onBuy = {
-                coroutineScope.launch { engine.buyPet(it) }
-            })
-            3 -> FactoryShop(engine, onBuy = {
-                coroutineScope.launch { engine.buyFactory(it) }
-            })
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    Text("🏪", fontSize = 28.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "商店",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = FarmBrown
+                        )
+                        Text(
+                            "💰 ${player?.gold ?: 0} 金币",
+                            fontSize = 12.sp,
+                            color = FarmGold,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                var category by remember { mutableStateOf(0) }
+                ScrollableTabRow(
+                    selectedTabIndex = category,
+                    containerColor = Color.Transparent,
+                    contentColor = FarmBrown
+                ) {
+                    listOf("🌱 种子", "🐄 动物").forEachIndexed { index, name ->
+                        Tab(
+                            selected = category == index,
+                            onClick = { category = index },
+                            text = {
+                                Text(
+                                    name,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (category == index) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                LazyColumn {
+                    if (category == 0) {
+                        items(CropConfigs.ALL.take(20)) { crop ->
+                            ShopItemCard(
+                                icon = crop.icon,
+                                name = crop.name,
+                                price = crop.sellPrice * 2,
+                                subText = "⏱${crop.growTimeSeconds}秒",
+                                canAfford = (player?.gold ?: 0) >= crop.sellPrice * 2
+                            ) {
+                                coroutineScope.launch {
+                                    val lands = engine.lands.value
+                                    val crops = engine.crops.value
+                                    val freeLand = lands.firstOrNull { land ->
+                                        crops.none { it.landId == land.landId }
+                                    }
+                                    if (freeLand != null) {
+                                        engine.plantCrop(freeLand.landId, crop.cropId)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        items(AnimalConfigs.ALL.take(10)) { animal ->
+                            ShopItemCard(
+                                icon = animal.icon,
+                                name = animal.name,
+                                price = animal.purchasePrice,
+                                subText = "Lv.${animal.unlockLevel}解锁",
+                                canAfford = (player?.gold ?: 0) >= animal.purchasePrice &&
+                                        (player?.level ?: 0) >= animal.unlockLevel
+                            ) {
+                                coroutineScope.launch { engine.buyAnimal(animal.animalId) }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun SeedShop(engine: FarmEngine) {
-    val player by engine.player.collectAsState()
-    Text("点击农田空地即可种植，种子将从金币中扣除",
-        modifier = Modifier.padding(12.dp),
-        style = MaterialTheme.typography.bodyMedium)
-
-    LazyColumn {
-        items(CropConfigs.ALL.take(30)) { crop ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+fun ShopItemCard(
+    icon: String,
+    name: String,
+    price: Int,
+    subText: String,
+    canAfford: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        color = Color.White,
+        shape = RoundedCornerShape(14.dp),
+        shadowElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0x15000000))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = canAfford) { if (canAfford) onClick() }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFF5F5F5)),
+                contentAlignment = Alignment.Center
             ) {
-                Text(crop.icon, fontSize = 24.sp, modifier = Modifier.padding(end = 8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(crop.name, fontWeight = FontWeight.Bold)
-                    Text("成熟: ${crop.growTimeSeconds}秒 | 售价:💰${crop.sellPrice} | ⭐${crop.exp}",
-                        style = MaterialTheme.typography.bodySmall)
-                }
-                val seedPrice = crop.sellPrice * 2
-                Text("种子💰$seedPrice", style = MaterialTheme.typography.labelLarge)
+                Text(icon, fontSize = 24.sp)
             }
-            Divider()
-        }
-    }
-}
-
-@Composable
-fun AnimalShop(engine: FarmEngine, onBuy: (Int) -> Unit) {
-    val player by engine.player.collectAsState()
-    LazyColumn {
-        items(AnimalConfigs.ALL) { animal ->
-            val canBuy = (player?.level ?: 0) >= animal.unlockLevel &&
-                    (player?.gold ?: 0) >= animal.purchasePrice
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(animal.icon, fontSize = 28.sp, modifier = Modifier.padding(end = 8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(animal.name, fontWeight = FontWeight.Bold)
-                    Text("产出: ${animal.productName} | 售价:💰${animal.productSellPrice}",
-                        style = MaterialTheme.typography.bodySmall)
-                    Text("需要等级: ${animal.unlockLevel}",
-                        style = MaterialTheme.typography.bodySmall)
-                }
-                Button(onClick = { onBuy(animal.animalId) }, enabled = canBuy) {
-                    Text("💰${animal.purchasePrice}")
-                }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = FarmText)
+                Text(subText, fontSize = 11.sp, color = FarmTextMuted)
             }
-            Divider()
-        }
-    }
-}
-
-@Composable
-fun PetShop(engine: FarmEngine, onBuy: (Int) -> Unit) {
-    val player by engine.player.collectAsState()
-    LazyColumn {
-        items(PetConfigs.ALL) { pet ->
-            val canBuy = (player?.level ?: 0) >= pet.unlockLevel &&
-                    (player?.gold ?: 0) >= pet.purchasePrice
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(pet.icon, fontSize = 28.sp, modifier = Modifier.padding(end = 8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(pet.name, fontWeight = FontWeight.Bold)
-                    Text("职责: ${pet.primaryWorkType} | ${pet.description}",
-                        style = MaterialTheme.typography.bodySmall)
-                    Text("需要等级: ${pet.unlockLevel}",
-                        style = MaterialTheme.typography.bodySmall)
-                }
-                Button(onClick = { onBuy(pet.petId) }, enabled = canBuy) {
-                    Text("💰${pet.purchasePrice}")
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "💰$price",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (canAfford) FarmGold else Color(0xFFCCCCCC)
+                )
+                if (canAfford) {
+                    Text("点击购买", fontSize = 10.sp, color = FarmGrassGreen)
+                } else {
+                    Text("金币不足", fontSize = 10.sp, color = Color(0xFFCCCCCC))
                 }
             }
-            Divider()
-        }
-    }
-}
-
-@Composable
-fun FactoryShop(engine: FarmEngine, onBuy: (Int) -> Unit) {
-    val player by engine.player.collectAsState()
-    LazyColumn {
-        items(FactoryConfigs.ALL) { factory ->
-            val canBuy = (player?.level ?: 0) >= factory.unlockLevel &&
-                    (player?.gold ?: 0) >= factory.purchasePrice
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(factory.icon, fontSize = 28.sp, modifier = Modifier.padding(end = 8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(factory.name, fontWeight = FontWeight.Bold)
-                    Text(factory.description, style = MaterialTheme.typography.bodySmall)
-                    Text("需要等级: ${factory.unlockLevel}",
-                        style = MaterialTheme.typography.bodySmall)
-                }
-                Button(onClick = { onBuy(factory.factoryId) }, enabled = canBuy) {
-                    Text("💰${factory.purchasePrice}")
-                }
-            }
-            Divider()
         }
     }
 }

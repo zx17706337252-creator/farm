@@ -7,175 +7,186 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.farmlife.app.config.TreeConfigs
+import com.farmlife.app.data.model.Season
+import com.farmlife.app.data.model.Weather
 import com.farmlife.app.domain.engine.FarmEngine
+import com.farmlife.app.ui.theme.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 
 /**
- * 果园屏幕
+ * 果园界面 - 精美版本
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrchardScreen(engine: FarmEngine) {
+fun OrchardScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
     val trees by engine.trees.collectAsState()
     val player by engine.player.collectAsState()
-    var showPlantDialog by remember { mutableStateOf(false) }
-    var selectedPos by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    val season by engine.season.collectAsState()
+    val weather by engine.weather.collectAsState()
 
-    produceState(initialValue = 0L) {
-        while (true) {
-            delay(1000)
-            value = System.currentTimeMillis()
-        }
+    val seasonText = when (season) {
+        Season.SPRING -> "🌸 春天"
+        Season.SUMMER -> "☀️ 夏天"
+        Season.AUTUMN -> "🍂 秋天"
+        Season.WINTER -> "❄️ 冬天"
+    }
+    val weatherEmoji = when (weather) {
+        Weather.SUNNY -> "☀️"
+        Weather.CLOUDY -> "☁️"
+        Weather.RAINY -> "🌧️"
+        Weather.SNOWY -> "❄️"
+        Weather.RAINBOW -> "🌈"
+        Weather.METEOR -> "☄️"
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-        Text("🍎 果园", style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(vertical = 8.dp))
+    Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopStatusBar(
+                gold = player?.gold ?: 0L,
+                level = player?.level ?: 1,
+                collectionScore = player?.collectionScore ?: 0,
+                season = seasonText,
+                weather = weatherEmoji,
+                onBack = onBack,
+                title = "🍎 果园"
+            )
 
-        Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text("果园需要等级 20 解锁", style = MaterialTheme.typography.bodyMedium)
-                Text("果树种植后持续产出，无需重新种植", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-
-        if (player?.level ?: 0 < 20) {
-            Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("需要等级 20 才能解锁果园", modifier = Modifier.padding(16.dp))
-            }
-        } else {
-            // 果园网格 5x5
-            LazyColumn {
-                items(trees) { tree ->
-                    val cfg = TreeConfigs.getById(tree.configId) ?: return@items
-                    TreeCard(
-                        tree = tree,
-                        cfg = cfg,
-                        onHarvest = {
-                            coroutineScope.launch { engine.harvestTree(tree.treeId) }
-                        }
-                    )
-                }
-            }
-
-            Button(
-                onClick = {
-                    selectedPos = Pair(0, 0)
-                    showPlantDialog = true
-                },
-                modifier = Modifier.fillMaxWidth().padding(8.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(8.dp)
             ) {
-                Text("种植果树")
-            }
-        }
-    }
-
-    if (showPlantDialog) {
-        AlertDialog(
-            onDismissRequest = { showPlantDialog = false },
-            title = { Text("选择要种植的果树") },
-            text = {
-                LazyColumn {
-                    items(TreeConfigs.ALL) { tree ->
-                        val canBuy = (player?.level ?: 0) >= tree.unlockLevel &&
-                                (player?.gold ?: 0) >= tree.sellPrice
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                                .clickable {
-                                    if (canBuy) {
-                                        coroutineScope.launch {
-                                            engine.plantTree(0, 0, tree.treeId)
-                                            showPlantDialog = false
-                                        }
-                                    }
-                                },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(tree.icon, fontSize = 24.sp, modifier = Modifier.padding(end = 8.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(tree.name, fontWeight = FontWeight.Bold)
-                                Text("生长: ${tree.growTimeHours}小时 | 收获: ${tree.harvestTimeHours}小时",
-                                    style = MaterialTheme.typography.bodySmall)
-                            }
-                            Text("💰${tree.sellPrice}", color = MaterialTheme.colorScheme.primary)
-                        }
-                        Divider()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    Text("🍎", fontSize = 28.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "果园",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = FarmPink
+                        )
+                        Text(
+                            "${trees.size} 棵果树",
+                            fontSize = 12.sp,
+                            color = FarmTextMuted
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showPlantDialog = false }) { Text("取消") }
-            }
-        )
-    }
-}
 
-@Composable
-fun TreeCard(
-    tree: com.farmlife.app.data.entity.TreeInstanceEntity,
-    cfg: com.farmlife.app.config.TreeConfig,
-    onHarvest: () -> Unit
-) {
-    val now = System.currentTimeMillis()
-    val canHarvest = now >= tree.nextHarvestTime
-    val progress = if (!canHarvest) {
-        val total = (tree.nextHarvestTime - tree.plantedTime).toFloat()
-        ((now - tree.plantedTime) / total).coerceIn(0f, 1f)
-    } else {
-        1f
-    }
+                Spacer(Modifier.height(12.dp))
 
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (canHarvest) Color(0xFFFFFDE7) else MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(cfg.icon, fontSize = 36.sp, modifier = Modifier.padding(end = 12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(cfg.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Lv.${tree.level}", fontSize = 12.sp)
-                }
-                Text("售价: 💰${cfg.sellPrice} | ⭐${cfg.exp}",
-                    style = MaterialTheme.typography.bodySmall)
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .height(8.dp)
-                        .background(Color(0xFFEEEEEE), RoundedCornerShape(4.dp))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(progress)
-                            .background(
-                                if (canHarvest) Color(0xFFFFC107) else Color(0xFF4CAF50),
-                                RoundedCornerShape(4.dp)
+                if (trees.isEmpty()) {
+                    PremiumCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth().padding(20.dp)
+                        ) {
+                            Text("🌳", fontSize = 48.sp)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "还没有果树",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = FarmBrown
                             )
-                    )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "种植果树开始收获果实吧！",
+                                fontSize = 13.sp,
+                                color = FarmTextMuted
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn {
+                        items(trees) { tree ->
+                            val now = System.currentTimeMillis()
+                            val total = tree.nextHarvestTime - tree.plantedTime
+                            val progress = if (total > 0 && now < tree.nextHarvestTime) {
+                                ((now - tree.plantedTime).toFloat() / total).coerceIn(0f, 1f)
+                            } else {
+                                1f
+                            }
+                            val isReady = progress >= 1f
+
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 3.dp),
+                                color = if (isReady) Color(0xFFFFFDE7) else Color.White,
+                                shape = RoundedCornerShape(12.dp),
+                                shadowElevation = if (isReady) 3.dp else 1.dp,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    if (isReady) 1.5.dp else 0.5.dp,
+                                    if (isReady) FarmGold else Color(0x15000000)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("🍎", fontSize = 24.sp)
+                                    Spacer(Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "果树 #${tree.treeId}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(4.dp)
+                                                .clip(RoundedCornerShape(2.dp))
+                                                .background(Color(0xFFF0F0F0))
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxHeight()
+                                                    .fillMaxWidth(progress)
+                                                    .clip(RoundedCornerShape(2.dp))
+                                                    .background(FarmGold)
+                                            )
+                                        }
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            if (isReady) "✅ 已成熟" else "${(progress * 100).toInt()}%",
+                                            fontSize = 10.sp,
+                                            color = if (isReady) FarmGold else FarmTextMuted
+                                        )
+                                    }
+                                    if (isReady) {
+                                        AnimatedButton(
+                                            onClick = {
+                                                coroutineScope.launch { engine.harvestTree(tree.treeId) }
+                                            }
+                                        ) {
+                                            Text("收获", fontSize = 11.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-            Button(onClick = onHarvest, enabled = canHarvest) {
-                Text(if (canHarvest) "收获" else "等待中")
             }
         }
     }

@@ -25,7 +25,7 @@ data class TreeInstanceEntity(
 data class FishInstanceEntity(
     @PrimaryKey(autoGenerate = true) val fishId: Long = 0,
     val configId: Int,
-    val pondId: Int,
+    val pondId: Long,
     val placedTime: Long,
     val finishTime: Long,
     val quality: Int = 0
