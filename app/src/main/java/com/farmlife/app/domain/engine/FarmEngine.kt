@@ -177,7 +177,7 @@ class FarmEngine(private val repository: FarmLifeRepository) {
             return
         }
         val p = _player.value ?: return
-        if (p.gold < cropConfig.sellPrice * 2L) {
+        if (p.gold < cropConfig.seedPrice) {
             showToast("金币不足")
             return
         }
@@ -198,7 +198,7 @@ class FarmEngine(private val repository: FarmLifeRepository) {
             finishTime = finishTime,
             quality = quality
         )
-        repository.updatePlayer(p.copy(gold = p.gold - cropConfig.sellPrice * 2L))
+        repository.updatePlayer(p.copy(gold = p.gold - cropConfig.seedPrice))
 
         repository.insertCrop(crop)
 

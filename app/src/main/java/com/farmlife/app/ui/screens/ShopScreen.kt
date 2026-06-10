@@ -122,9 +122,9 @@ fun ShopScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
                             ShopItemCard(
                                 icon = crop.icon,
                                 name = crop.name,
-                                price = crop.sellPrice * 2,
-                                subText = "⏱${crop.growTimeSeconds}秒",
-                                canAfford = (player?.gold ?: 0) >= crop.sellPrice * 2
+                                price = crop.seedPrice,
+                                subText = "💰售价:${crop.sellPrice} ⏱${crop.growTimeSeconds}秒",
+                                canAfford = (player?.gold ?: 0) >= crop.seedPrice
                             ) {
                                 coroutineScope.launch {
                                     val lands = engine.lands.value
@@ -144,7 +144,7 @@ fun ShopScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
                                 icon = animal.icon,
                                 name = animal.name,
                                 price = animal.purchasePrice,
-                                subText = "Lv.${animal.unlockLevel}解锁",
+                                subText = "💰产出:${animal.productName}×${animal.productSellPrice} Lv.${animal.unlockLevel}解锁",
                                 canAfford = (player?.gold ?: 0) >= animal.purchasePrice &&
                                         (player?.level ?: 0) >= animal.unlockLevel
                             ) {
