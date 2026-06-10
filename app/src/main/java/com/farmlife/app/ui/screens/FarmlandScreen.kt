@@ -4,6 +4,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,8 +22,7 @@ import com.farmlife.app.data.model.Season
 import com.farmlife.app.data.model.Weather
 import com.farmlife.app.domain.engine.FarmEngine
 import com.farmlife.app.ui.theme.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 
 /**
  * 农田界面 - 精美动态版本
@@ -174,7 +174,7 @@ fun FarmlandScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 2000.dp)
                 ) {
-                    items(landList) { tile ->
+                    gridItems(landList) { tile ->
                         val crop = crops.firstOrNull { it.landId == tile.landId }
                         FarmTile(
                             landId = tile.landId,
