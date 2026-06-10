@@ -880,11 +880,20 @@ class FarmEngine(private val repository: FarmLifeRepository) {
     fun getNextTutorialStep(): TutorialSystem.Step? {
         val progress = _tutorialProgress.value ?: return TutorialSystem.Step.WELCOME
         val playerLevel = _player.value?.level ?: 0
-        return TutorialSystem.getNextStep(progress.currentStep, playerLevel)
+        // 检查是否已经完成过引导
+        val nextStep = TutorialSystem.getNextStep(progress.currentStep, playerLevel)
+        // 如果下一步是 END 或者已经完成过，返回 null
+        if (nextStep == null || nextStep == TutorialSystem.Step.END) return null
+        // 检查该步骤是否已经完成
+        if (TutorialSystem.isStepCompleted(progress.completedSteps, nextStep.id)) return null
+        return nextStep
     }
 
     suspend fun markTutorialStepComplete(stepId: Int) {
         repository.markTutorialStep(stepId)
+        val progress = repository.getTutorialProgress()
+        // 同时更新 currentStep 为当前完成的步骤
+        repository.updateTutorialProgress(progress.copy(currentStep = stepId))
         _tutorialProgress.value = repository.getTutorialProgress()
     }
 

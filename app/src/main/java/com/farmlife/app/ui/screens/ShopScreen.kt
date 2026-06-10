@@ -65,7 +65,6 @@ fun ShopScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
                     .padding(8.dp)
             ) {
                 Row(
@@ -115,7 +114,9 @@ fun ShopScreen(engine: FarmEngine, onBack: () -> Unit = {}) {
 
                 Spacer(Modifier.height(12.dp))
 
-                LazyColumn {
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                ) {
                     if (category == 0) {
                         items(CropConfigs.ALL.take(20)) { crop ->
                             ShopItemCard(
