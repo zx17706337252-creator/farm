@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
     - uses: actions/checkout@v4
@@ -30,13 +30,13 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Gradle 8.2
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: 8.2
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
 
     - name: Build with Gradle
-      run: gradle assembleDebug --info
+      run: ./gradlew assembleDebug --no-daemon
+      env:
+        GRADLE_OPTS: "-Xmx4g -Dorg.gradle.jvmargs=-Xmx4g"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
