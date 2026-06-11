@@ -1,5 +1,6 @@
 package com.farmlife.app.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -27,10 +28,14 @@ fun MainAppScreen(engine: FarmEngine) {
     // 启动时显示引导
     LaunchedEffect(Unit) {
         delay(500)
-        val step = engine.getNextTutorialStep()
-        if (step != null) {
-            currentTutorialStep = step
-            showTutorial = true
+        try {
+            val step = engine.getNextTutorialStep()
+            if (step != null) {
+                currentTutorialStep = step
+                showTutorial = true
+            }
+        } catch (e: Exception) {
+            // 忽略引导错误
         }
     }
 
@@ -52,8 +57,10 @@ fun MainAppScreen(engine: FarmEngine) {
 
     Box(modifier = Modifier.fillMaxSize().background(FarmBackgroundGradient)) {
         // 世界地图（默认显示）
-        BackgroundRevealAnimation(
-            visible = currentModule == null
+        AnimatedVisibility(
+            visible = currentModule == null,
+            enter = fadeIn(),
+            exit = fadeOut()
         ) {
             WorldMapScreen(engine) { module ->
                 currentModule = module
@@ -61,8 +68,10 @@ fun MainAppScreen(engine: FarmEngine) {
         }
 
         // 各模块界面（动画进入/退出）
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.FARMLAND
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.FARMLAND,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             FarmlandScreen(
                 engine = engine,
@@ -70,8 +79,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.LIVESTOCK
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.LIVESTOCK,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             LivestockScreen(
                 engine = engine,
@@ -79,8 +90,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.ORCHARD
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.ORCHARD,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             OrchardScreen(
                 engine = engine,
@@ -88,8 +101,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.FACTORY
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.FACTORY,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             FactoryScreen(
                 engine = engine,
@@ -97,8 +112,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.FISHPOND
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.FISHPOND,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             FishpondScreen(
                 engine = engine,
@@ -106,8 +123,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.SHOP
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.SHOP,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             ShopScreen(
                 engine = engine,
@@ -115,8 +134,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.INVENTORY
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.INVENTORY,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             InventoryScreen(
                 engine = engine,
@@ -124,8 +145,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.COLLECTION
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.COLLECTION,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             CollectionScreen(
                 engine = engine,
@@ -133,8 +156,10 @@ fun MainAppScreen(engine: FarmEngine) {
             )
         }
 
-        ModuleEnterAnimation(
-            visible = currentModule == FarmModule.PETS
+        AnimatedVisibility(
+            visible = currentModule == FarmModule.PETS,
+            enter = slideInHorizontally() + fadeIn(),
+            exit = slideOutHorizontally() + fadeOut()
         ) {
             PetScreen(
                 engine = engine,
